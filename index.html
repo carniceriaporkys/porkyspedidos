@@ -550,7 +550,7 @@
           <label style="color: var(--pink-accent); font-weight: bold; font-size: 0.88rem; margin-bottom: 6px; display: block;">📍 Dirección de Envío en Altagracia de Orituco:</label>
           <div class="form-group">
             <label for="reg-sector">Sector / Urbanización / Barrio:</label>
-            <input type="text" id="reg-sector" class="uppercase-input" placeholder="EJ: SECTOR EL DIAMANTE" required>
+            <input type="text" id="reg-sector" class="uppercase-input" placeholder="EJ: URBANIZACIÓN EL DIAMANTE" required>
           </div>
           <div class="form-group">
             <label for="reg-calle">Calle / Avenida:</label>
@@ -1666,21 +1666,63 @@
       }
     }, 3000);
 
-    window.addEventListener('focus', function() {
-      if (window.db && window.firebaseCollections) {
-        var fc = window.firebaseCollections, db = window.db;
-        fc.getDocs(fc.collection(db, 'orders')).then(function(snapshot) {
-          var fetchedOrders = [];
-          snapshot.forEach(function(docSnap) {
-            var ord = docSnap.data();
-            ord.firestoreId = docSnap.id;
-            fetchedOrders.push(ord);
-          });
-          allOrdersList = fetchedOrders;
-          notifyIncomingOrdersIfNeeded(allOrdersList);
-          if (typeof renderAdminOrders === 'function') renderAdminOrders();
+    function syncAllLiveData() {
+      var activeElementId = document.activeElement ? document.activeElement.id : '';
+      var isUserTypingInChat = activeElementId && (activeElementId.startsWith('admin-chat-input-') || activeElementId.startsWith('client-chat-input-'));
+      if (!window.db || !window.firebaseCollections) return;
+
+      var db = window.db;
+      var fc = window.firebaseCollections;
+
+      fc.getDocs(fc.collection(db, 'orders')).then(function(snapshot) {
+        var fetchedOrders = [];
+        snapshot.forEach(function(docSnap) {
+          var ord = docSnap.data();
+          ord.firestoreId = docSnap.id;
+          fetchedOrders.push(ord);
+        });
+        allOrdersList = fetchedOrders;
+        notifyIncomingOrdersIfNeeded(allOrdersList);
+        if (!isUserTypingInChat) {
           if (typeof showOrderStatusUI === 'function') showOrderStatusUI();
-        }).catch(function(e){});
+          if (typeof renderAdminOrders === 'function') renderAdminOrders();
+        }
+        if (typeof renderClientHistory === 'function') renderClientHistory();
+      }).catch(function(e){});
+
+      fc.getDocs(fc.collection(db, 'config')).then(function(snapshot) {
+        snapshot.forEach(function(docSnap) {
+          var data = docSnap.data();
+          if (docSnap.id === 'catalog' && data && Array.isArray(data.products)) {
+            catalogProducts = data.products;
+            if (typeof renderCatalog === 'function') renderCatalog();
+            if (typeof renderAdminPriceEditor === 'function') renderAdminPriceEditor();
+            if (typeof renderAdminInventoryEditor === 'function') renderAdminInventoryEditor();
+          }
+          if (docSnap.id === 'store_settings' && data) {
+            if (data.rate) {
+              exchangeRate = data.rate;
+              var rateInput = document.getElementById('exchange-rate-input');
+              if (rateInput && document.activeElement !== rateInput) rateInput.value = exchangeRate;
+            }
+            if (typeof data.isOpen !== 'undefined') {
+              isStoreOpen = data.isOpen;
+              if (typeof updateStoreButtonUI === 'function') updateStoreButtonUI();
+            }
+            if (typeof data.dailyOffers === 'string') dailyOffersText = data.dailyOffers;
+            if (typeof data.casheaEnabled === 'boolean') casheaEnabled = data.casheaEnabled;
+            if (typeof data.casheaInfo === 'string') casheaInfoText = data.casheaInfo;
+            if (typeof updateDailyOffersUI === 'function') updateDailyOffersUI();
+            if (typeof updateCasheaUI === 'function') updateCasheaUI();
+          }
+        });
+      }).catch(function(e){});
+    }
+
+    window.addEventListener('focus', syncAllLiveData);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        syncAllLiveData();
       }
     });
 
