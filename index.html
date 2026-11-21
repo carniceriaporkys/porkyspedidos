@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Porkys C.A - App de Pedidos</title>
   <meta name="description" content="Porkys C.A - Realiza tus pedidos de carnes, charcutería, víveres y artículos de limpieza directo a tu hogar en Altagracia de Orituco.">
+  <meta name="theme-color" content="#ff4757">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Porkys C.A">
+  <link rel="manifest" href="./manifest.json">
   <meta property="og:title" content="Porkys C.A - App de Pedidos">
   <meta property="og:description" content="Carnes, charcutería, víveres y limpieza a tu puerta. ¡Haz tu pedido fácil y rápido!">
   <meta property="og:url" content="https://carniceriaporkys.github.io/envios/">
@@ -802,7 +808,7 @@
 
       <div class="card-box" style="padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
         <div class="form-group" style="margin-bottom:0;">
-          <label style="color: var(--pink-accent); font-weight: bold;">🔔 Sonido de Alerta de Nuevos Pedidos:</label>
+          <label style="color: var(--pink-accent); font-weight: bold;">🔔 Sonido y Notificaciones en Teléfono:</label>
           <div style="display:flex; gap:6px; margin-top:4px;">
             <select id="admin-sound-select" onchange="saveNotificationSoundPreference(this.value)" style="flex:1;">
               <option value="cash">Timbre de Caja Registradora</option>
@@ -811,6 +817,10 @@
               <option value="digital">Tono Digital</option>
             </select>
             <button type="button" class="btn btn-sm btn-info" onclick="playNotificationSound(true)">🔊 Probar</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed #eee;">
+            <span id="push-notif-status" style="font-size:0.78rem; color:var(--text-muted);">📲 Avisos del sistema: Verificando...</span>
+            <button type="button" id="btn-enable-push" class="btn btn-sm btn-success" style="margin-top:0; white-space:nowrap;" onclick="requestSystemNotificationsPermission()">📲 Activar Avisos</button>
           </div>
         </div>
       </div>
@@ -1178,6 +1188,7 @@
     var notificationSoundType = 'cash';
     var sharedAudioCtx = null;
     var welcomeModalTimer = null;
+    var swRegistration = null;
 
     var storeBanks = [
       'BANCO DE VENEZUELA (0102)', 'BANESCO (0134)', 'BBVA PROVINCIAL (0108)',
@@ -1190,6 +1201,95 @@
 
     var storeReceiverBanks = ['BANCO DE VENEZUELA (0102)', 'BANESCO (0134)'];
     var DELIVERY_COST_USD = 1.00;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(reg) {
+          swRegistration = reg;
+          updatePushNotificationStatusUI();
+        }).catch(function() {
+          updatePushNotificationStatusUI();
+        });
+      });
+    }
+
+    function updatePushNotificationStatusUI() {
+      var statusEl = document.getElementById('push-notif-status');
+      var btnEl = document.getElementById('btn-enable-push');
+      if (!statusEl || !btnEl) return;
+
+      if (!('Notification' in window)) {
+        statusEl.textContent = '📲 Avisos del sistema: No soportado en este navegador';
+        btnEl.classList.add('hidden');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        statusEl.textContent = '📲 Avisos en teléfono: 🟢 Activados';
+        statusEl.style.color = '#155724';
+        btnEl.textContent = '🔔 Probar Aviso';
+        btnEl.className = 'btn btn-sm btn-info';
+      } else if (Notification.permission === 'denied') {
+        statusEl.textContent = '📲 Avisos bloqueados (habilítalos en ajustes del navegador)';
+        statusEl.style.color = '#ff4757';
+        btnEl.textContent = '⚠️ Bloqueado';
+        btnEl.className = 'btn btn-sm btn-warning';
+      } else {
+        statusEl.textContent = '📲 Avisos en teléfono: Desactivados';
+        statusEl.style.color = 'var(--text-muted)';
+        btnEl.textContent = '📲 Activar Avisos';
+        btnEl.className = 'btn btn-sm btn-success';
+      }
+    }
+
+    function triggerSystemNotification(title, bodyText) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      var options = {
+        body: bodyText,
+        tag: 'porkys-order-alert-' + Date.now(),
+        renotify: true,
+        vibrate: [300, 150, 300, 150, 400],
+        requireInteraction: true
+      };
+
+      if (swRegistration && swRegistration.showNotification) {
+        swRegistration.showNotification(title, options).catch(function() {
+          try { new Notification(title, options); } catch (e) {}
+        });
+      } else {
+        try { new Notification(title, options); } catch (e) {}
+      }
+    }
+
+    function requestSystemNotificationsPermission() {
+      getAudioContext();
+      if (!('Notification' in window)) {
+        showAlert('Este navegador no soporta notificaciones del sistema.', 'error');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        updatePushNotificationStatusUI();
+        playNotificationSound(false);
+        triggerSystemNotification('🥩 Porkys C.A — Prueba de Aviso', 'Así te avisará tu teléfono cuando entre un pedido nuevo en caja.');
+        showAlert('¡Notificación de prueba enviada al teléfono!', 'success');
+        return;
+      }
+
+      Notification.requestPermission().then(function(permission) {
+        updatePushNotificationStatusUI();
+        if (permission === 'granted') {
+          playNotificationSound(false);
+          triggerSystemNotification('🥩 Porkys C.A — Avisos Activados', 'Recibirás alertas aquí cuando llegue un pedido nuevo.');
+          showAlert('¡Notificaciones activadas en tu teléfono!', 'success');
+        } else {
+          showAlert('No se otorgó permiso de notificaciones. Revísalo en los ajustes de Chrome.', 'error');
+        }
+      }).catch(function() {
+        showAlert('No se pudo solicitar el permiso de notificaciones.', 'error');
+      });
+    }
 
     function getAudioContext() {
       var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -1421,6 +1521,27 @@
     var activeUser = null;
     var pendingOrderData = null;
     var currentShiftData = null;
+    var previousOrdersCount = -1;
+
+    function notifyIncomingOrdersIfNeeded(ordersArr) {
+      var newOrdersCount = ordersArr.length;
+      if (previousOrdersCount !== -1 && newOrdersCount > previousOrdersCount) {
+        var latestOrder = ordersArr[ordersArr.length - 1];
+        var clientLabel = (latestOrder && latestOrder.client)
+          ? (latestOrder.client.nombre + ' ' + latestOrder.client.apellido)
+          : 'Un cliente';
+        var amountLabel = (latestOrder && typeof latestOrder.total === 'number')
+          ? (' • Total: $' + latestOrder.total.toFixed(2))
+          : '';
+
+        playNotificationSound(false);
+        triggerSystemNotification(
+          '🚨 ¡Nuevo Pedido en Porkys C.A!',
+          clientLabel + ' realizó un pedido' + amountLabel
+        );
+      }
+      previousOrdersCount = newOrdersCount;
+    }
 
     function initFirebaseSync() {
       var db = window.db, fc = window.firebaseCollections;
@@ -1479,7 +1600,6 @@
         }
       });
 
-      var previousOrdersCount = -1;
       fc.onSnapshot(fc.collection(db, 'orders'), function(snapshot) {
         allOrdersList = [];
         snapshot.forEach(function(docSnap) {
@@ -1488,12 +1608,7 @@
           allOrdersList.push(ord);
         });
 
-        var newOrdersCount = allOrdersList.length;
-        if (previousOrdersCount !== -1 && newOrdersCount > previousOrdersCount) {
-          playNotificationSound(false);
-        }
-        previousOrdersCount = newOrdersCount;
-
+        notifyIncomingOrdersIfNeeded(allOrdersList);
         showOrderStatusUI();
         renderClientHistory();
         renderAdminOrders();
@@ -1507,6 +1622,7 @@
               allOrdersList.push(ord);
             }
           });
+          notifyIncomingOrdersIfNeeded(allOrdersList);
           showOrderStatusUI();
           renderClientHistory();
           renderAdminOrders();
@@ -1542,6 +1658,7 @@
             fetchedOrders.push(ord);
           });
           allOrdersList = fetchedOrders;
+          notifyIncomingOrdersIfNeeded(allOrdersList);
           if (typeof showOrderStatusUI === 'function') showOrderStatusUI();
           if (typeof renderClientHistory === 'function') renderClientHistory();
           if (typeof renderAdminOrders === 'function') renderAdminOrders();
@@ -1560,6 +1677,7 @@
             fetchedOrders.push(ord);
           });
           allOrdersList = fetchedOrders;
+          notifyIncomingOrdersIfNeeded(allOrdersList);
           if (typeof renderAdminOrders === 'function') renderAdminOrders();
           if (typeof showOrderStatusUI === 'function') showOrderStatusUI();
         }).catch(function(e){});
@@ -1604,6 +1722,9 @@
         updateDailyOffersUI();
         updateCasheaUI();
         renderCatalog();
+      }
+      if (screenId === 'screen-admin-panel') {
+        updatePushNotificationStatusUI();
       }
     }
 
@@ -2362,6 +2483,7 @@
       Promise.all([clearOrders, clearClients, resetCatalog]).then(function() {
         hideLoadingModal();
         allOrdersList = [];
+        previousOrdersCount = 0;
         registeredClients = {};
         catalogProducts = [];
         currentCart = [];
@@ -2389,7 +2511,9 @@
       var enteredPass = passInput ? passInput.value.trim() : '';
 
       if (enteredPass === currentAdminPass) {
+        getAudioContext();
         updateStoreButtonUI();
+        updatePushNotificationStatusUI();
         renderAdminClientsList();
         renderAdminStoreBanksList();
         renderAdminPriceEditor();
@@ -2591,6 +2715,7 @@
         return fc.getDocs(fc.collection(db, 'orders'));
       }).then(function(snapshot) {
         allOrdersList = [];
+        previousOrdersCount = 0;
         snapshot.forEach(function(docSnap) {
           var ord = docSnap.data();
           ord.firestoreId = docSnap.id;
@@ -2606,6 +2731,7 @@
       }).catch(function(err) {
         hideLoadingModal();
         allOrdersList = [];
+        previousOrdersCount = 0;
         currentCart = [];
         updateStoreButtonUI();
         renderAdminOrders();
@@ -2671,6 +2797,7 @@
       updateStoreReceiverBanksDisplay();
       updateDailyOffersUI();
       updateCasheaUI();
+      updatePushNotificationStatusUI();
     });
   </script>
 </body>
