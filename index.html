@@ -1314,6 +1314,32 @@
       }, 4600);
     }
 
+    function getClientDisplayName(cedulaOrObj) {
+      if (cedulaOrObj && typeof cedulaOrObj === 'object') {
+        var full = ((cedulaOrObj.nombre || '') + ' ' + (cedulaOrObj.apellido || '')).trim();
+        return full || cedulaOrObj.cedula || 'Cliente';
+      }
+      var cleanCed = (cedulaOrObj || '').toString().trim().toUpperCase();
+      if (cleanCed && registeredClients[cleanCed]) {
+        var cl = registeredClients[cleanCed];
+        var fullCl = ((cl.nombre || '') + ' ' + (cl.apellido || '')).trim();
+        return fullCl || cleanCed;
+      }
+      if (activeUser && (!cleanCed || activeUser.cedula === cleanCed)) {
+        var fullAct = ((activeUser.nombre || '') + ' ' + (activeUser.apellido || '')).trim();
+        return fullAct || activeUser.cedula || 'Cliente';
+      }
+      return cleanCed || 'Cliente';
+    }
+
+    function getChatMessageAuthorLabel(msgItem, fallbackClientName) {
+      if (!msgItem) return 'Usuario: ';
+      if (msgItem.sender === 'admin') {
+        return (msgItem.senderName || 'Comercio (Porkys C.A)') + ': ';
+      }
+      return (msgItem.senderName || fallbackClientName || 'Cliente') + ': ';
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js').then(function(reg) {
@@ -1662,8 +1688,13 @@
         ? preOrderChatsMap[cleanCedula].messages.slice()
         : [];
 
+      var authorName = senderType === 'admin'
+        ? 'Comercio (Porkys C.A)'
+        : getClientDisplayName(cleanCedula);
+
       currentMessages.push({
         sender: senderType,
+        senderName: authorName,
         text: text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
@@ -1672,7 +1703,7 @@
       prevPreChatCounts[cleanCedula] = currentMessages.length;
 
       if (!preOrderChatsMap[cleanCedula]) {
-        preOrderChatsMap[cleanCedula] = { clientCedula: cleanCedula, messages: [] };
+        preOrderChatsMap[cleanCedula] = { clientCedula: cleanCedula, clientName: getClientDisplayName(cleanCedula), messages: [] };
       }
       preOrderChatsMap[cleanCedula].messages = currentMessages;
 
@@ -1685,10 +1716,7 @@
       if (window.db && window.firebaseCollections) {
         var db = window.db;
         var fc = window.firebaseCollections;
-        var clientObj = registeredClients[cleanCedula];
-        var clientName = clientObj
-          ? (clientObj.nombre + ' ' + clientObj.apellido)
-          : cleanCedula;
+        var clientName = getClientDisplayName(cleanCedula);
 
         fc.setDoc(fc.doc(db, 'pre_order_chats', cleanCedula), {
           clientCedula: cleanCedula,
@@ -1714,6 +1742,7 @@
       var cleanCedula = activeUser.cedula.trim().toUpperCase();
       var chatDoc = preOrderChatsMap[cleanCedula];
       var messagesList = (chatDoc && Array.isArray(chatDoc.messages)) ? chatDoc.messages : [];
+      var defaultClientName = getClientDisplayName(activeUser);
 
       if (messagesList.length === 0) {
         boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o producto adicional antes de pagar.</p>';
@@ -1724,7 +1753,9 @@
       for (var i = 0; i < messagesList.length; i++) {
         var m = messagesList[i];
         var bubbleClass = m.sender === 'admin' ? 'admin' : 'client';
-        var senderLabel = m.sender === 'admin' ? 'Comercio: ' : 'Tú: ';
+        var senderLabel = m.sender === 'admin'
+          ? (m.senderName || 'Comercio (Porkys C.A)') + ': '
+          : (m.senderName || defaultClientName) + ': ';
         html += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + m.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (m.time || '') + '</span></div>';
       }
       boxEl.innerHTML = html;
@@ -1764,9 +1795,10 @@
         var thread = activeThreads[t];
         var cedKey = thread.clientCedula;
         var clientInfo = registeredClients[cedKey];
-        var clientTitle = clientInfo
-          ? (clientInfo.nombre + ' ' + clientInfo.apellido + ' (' + cedKey + ')')
-          : (thread.clientName ? (thread.clientName + ' (' + cedKey + ')') : cedKey);
+        var clientPlainName = clientInfo
+          ? ((clientInfo.nombre || '') + ' ' + (clientInfo.apellido || '')).trim() || cedKey
+          : (thread.clientName || cedKey);
+        var clientTitle = clientPlainName + ' (' + cedKey + ')';
 
         var msgs = thread.messages || [];
         var lastSenderIsClient = msgs.length > 0 && msgs[msgs.length - 1].sender === 'client';
@@ -1778,7 +1810,7 @@
         for (var m = 0; m < msgs.length; m++) {
           var item = msgs[m];
           var cls = item.sender === 'admin' ? 'admin' : 'client';
-          var lbl = item.sender === 'admin' ? 'Tú (Comercio): ' : 'Cliente: ';
+          var lbl = getChatMessageAuthorLabel(item, clientPlainName);
           msgsHtml += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
         }
 
@@ -1788,7 +1820,7 @@
           '</div>' +
           '<div class="chat-messages-box" id="pre-chat-admin-box-' + cedKey + '">' + msgsHtml + '</div>' +
           '<div class="chat-input-row">' +
-          '<input type="text" id="pre-chat-admin-input-' + cedKey + '" placeholder="Responder consulta al cliente..." onkeydown="if(event.key===\'Enter\') { event.preventDefault(); sendPreOrderMessage(\'' + cedKey + '\', \'admin\'); }">' +
+          '<input type="text" id="pre-chat-admin-input-' + cedKey + '" placeholder="Responder consulta a ' + clientPlainName + '..." onkeydown="if(event.key===\'Enter\') { event.preventDefault(); sendPreOrderMessage(\'' + cedKey + '\', \'admin\'); }">' +
           '<button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendPreOrderMessage(\'' + cedKey + '\', \'admin\')">Enviar</button>' +
           '</div></div>';
       }
@@ -1987,6 +2019,7 @@
         checkRecoveryLabels();
         if (typeof renderAdminClientsList === 'function') renderAdminClientsList();
         renderAdminPreChats();
+        renderAdminOrders();
         restoreSavedSession();
       });
     }
@@ -2511,8 +2544,13 @@
       if (!targetOrder) return;
       if (!targetOrder.messages) targetOrder.messages = [];
 
+      var authorName = senderType === 'admin'
+        ? 'Comercio (Porkys C.A)'
+        : getClientDisplayName(activeUser || (targetOrder.client ? targetOrder.client : ''));
+
       var newMsg = {
         sender: senderType,
+        senderName: authorName,
         text: text,
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
       };
@@ -2572,6 +2610,8 @@
         else if (ord.status === 'packed') statusText = '📦 Empacado';
         else if (ord.status === 'on_the_way') statusText = '🛵 En Camino';
 
+        var orderClientName = getClientDisplayName(ord.client || activeUser);
+
         multiHtml += '<div style="background:white; padding:8px; border-radius:6px; margin-bottom:6px; border:1px solid #ddd;"><p><strong>Pedido #' + (k+1) + ':</strong> ' + (itemsArray.join(', ') || 'Productos varios') + '</p><p><small>Ref: ' + (ord.ref || 'S/R') + ' | Monto: ' + formatBsCurrency(ord.amountBs || 0) + ' Bs.</small></p><span class="status-badge ' + ord.status + '" style="margin-top:4px; display:inline-block; font-size:0.75rem; font-weight:bold; padding: 4px 8px; border-radius: 4px; background: #fff3cd; color: #856404;">Estatus: ' + statusText + '</span>';
 
         var messagesList = ord.messages || [];
@@ -2582,7 +2622,7 @@
           for (var m = 0; m < messagesList.length; m++) {
             var msgItem = messagesList[m];
             var bubbleClass = msgItem.sender === 'admin' ? 'admin' : 'client';
-            var senderLabel = msgItem.sender === 'admin' ? 'Comercio: ' : 'Tú: ';
+            var senderLabel = getChatMessageAuthorLabel(msgItem, orderClientName);
             chatHtml += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + msgItem.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (msgItem.time || '') + '</span></div>';
           }
         }
@@ -3033,19 +3073,20 @@
         var orderTotal = order.total || 0, orderSubtotal = order.subtotal || orderTotal, deliveryVal = order.deliveryCost || 1.00;
         var receiptHtml = order.receiptBase64 ? '<div style="margin-top:6px;"><strong style="font-size:0.78rem; display:block;">Capture de Pago:</strong><img src="' + order.receiptBase64 + '" style="max-height:50px; border-radius:4px; border:1px solid #ccc; cursor:pointer;" onclick="zoomReceipt(\'' + order.receiptBase64 + '\')" title="Ampliar capture"></div>' : '';
 
+        var orderClientFullName = getClientDisplayName(order.client);
         var messagesList = order.messages || [];
-        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con el Cliente:</div><div class="chat-messages-box" id="admin-chat-box-' + order.id + '">';
+        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con ' + orderClientFullName + ':</div><div class="chat-messages-box" id="admin-chat-box-' + order.id + '">';
         if (messagesList.length === 0) {
           chatHtml += '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">No hay mensajes todavía.</p>';
         } else {
           for (var m = 0; m < messagesList.length; m++) {
             var msgItem = messagesList[m];
             var bubbleClass = msgItem.sender === 'admin' ? 'admin' : 'client';
-            var senderLabel = msgItem.sender === 'admin' ? 'Tú (Comercio): ' : 'Cliente: ';
+            var senderLabel = getChatMessageAuthorLabel(msgItem, orderClientFullName);
             chatHtml += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + msgItem.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (msgItem.time || '') + '</span></div>';
           }
         }
-        chatHtml += '</div><div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Escribe un mensaje..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
+        chatHtml += '</div><div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Responder a ' + orderClientFullName + '..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
 
         html += '<div class="order-card-admin" style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.83rem;"><h4>👤 ' + order.client.nombre + ' ' + order.client.apellido + ' (Cédula: <span style="color:var(--pink-accent);">' + order.client.cedula + '</span>)</h4>' +
           '<p><strong>🗓️ Fecha:</strong> ' + (order.dateStr || new Date(order.id).toLocaleDateString()) + '</p>' +
