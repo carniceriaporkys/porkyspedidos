@@ -724,21 +724,21 @@
           </div>
         </div>
 
-        <!-- Chat previo al pedido: consultar ofertas o pedir algo que aún no está cargado -->
+        <!-- Chat previo al pedido: consultar dudas o pedir algo antes de armar el pedido -->
         <div id="client-pre-order-chat-box" class="pre-order-chat-card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-            <strong style="font-size:0.86rem; color:var(--pink-accent);">💬 Consultar antes de pedir</strong>
+            <strong style="font-size:0.86rem; color:var(--pink-accent);">💬 Chat con el Comercio</strong>
             <span style="font-size:0.72rem; color:var(--text-muted);">Sin enviar capture</span>
           </div>
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px; line-height:1.3;">
-            ¿Buscas algún corte o producto adicional que aún no ves en la lista o quieres preguntar por las ofertas? Escríbenos aquí antes de pagar.
+          <p style="font-size:0.8rem; color:var(--text-dark); font-weight:600; margin-bottom:6px; line-height:1.35;">
+            ¿Dudas, inquietudes? ¿Deseas contactar con el Comercio antes de armar tu pedido?
           </p>
           <div class="chat-container" style="margin-top:0;">
             <div class="chat-messages-box" id="client-pre-chat-messages">
-              <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta para el comercio.</p>
+              <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o inquietud para el comercio.</p>
             </div>
             <div class="chat-input-row">
-              <input type="text" id="pre-chat-client-input" placeholder="Ej: ¿Tienen costilla o un corte extra hoy?" onkeydown="if(event.key==='Enter') { event.preventDefault(); sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client'); }">
+              <input type="text" id="pre-chat-client-input" placeholder="Ej: ¿Dudas, inquietudes? Escríbele al comercio..." onkeydown="if(event.key==='Enter') { event.preventDefault(); sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client'); }">
               <button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client')">Consultar</button>
             </div>
           </div>
@@ -1745,7 +1745,7 @@
       var defaultClientName = getClientDisplayName(activeUser);
 
       if (messagesList.length === 0) {
-        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o producto adicional antes de pagar.</p>';
+        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu duda o inquietud antes de armar tu pedido.</p>';
         return;
       }
 
