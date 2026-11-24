@@ -74,6 +74,39 @@
     .screen { background: var(--card-bg); padding: 16px; border-radius: var(--radius); box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 15px; }
     .hidden { display: none !important; }
 
+    /* Lluvia de papelillos */
+    .confetti-rain-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1500;
+    }
+
+    .confetti-piece {
+      position: fixed;
+      top: -16px;
+      width: 9px;
+      height: 14px;
+      border-radius: 2px;
+      opacity: 0.95;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      85% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(105vh) rotate(680deg);
+        opacity: 0;
+      }
+    }
+
     /* Portada Principal Llamativa (#screen-home) */
     .home-showcase {
       background: linear-gradient(160deg, #fff8fa 0%, #ffffff 55%, #fff9e6 100%);
@@ -341,6 +374,14 @@
     .chat-input-row { display: flex; gap: 4px; }
     .chat-input-row input { flex: 1; padding: 6px 8px; font-size: 0.82rem; border: 1px solid #ccc; border-radius: 6px; outline: none; background: #fff; }
 
+    .pre-order-chat-card {
+      background: #fff9fb;
+      border: 1.5px solid #ffd6de;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+
     /* Modal Moderno de Bienvenida */
     .welcome-splash-overlay {
       position: fixed;
@@ -381,7 +422,7 @@
     }
 
     .pig-cap-group {
-      transform-origin: 48px 26px;
+      transform-origin: 42px 24px;
       animation: tipCap 1.6s ease-in-out infinite;
     }
 
@@ -392,7 +433,7 @@
 
     @keyframes tipCap {
       0%, 100% { transform: rotate(0deg) translateY(0px); }
-      35%, 65% { transform: rotate(-18deg) translate(4px, -7px); }
+      35%, 65% { transform: rotate(-10deg) translate(2px, -4px); }
     }
 
     @keyframes liftHand {
@@ -438,30 +479,27 @@
 
     <section id="screen-home" class="screen">
       <div class="home-showcase">
-        <span class="home-pill-badge">🛵 ENVÍOS EN ALTAGRACIA DE ORITUCO</span>
+        <span class="home-pill-badge">🎄 FELIZ NAVIDAD • ENVÍOS EN ALTAGRACIA DE ORITUCO</span>
         <div class="home-mascot-stage">
-          <svg viewBox="0 0 80 80" width="84" height="84" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 30C16 18 27 15 32 25" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
-            <path d="M58 30C64 18 53 15 48 25" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
-            <circle cx="40" cy="44" r="22" fill="#ffd1dc" stroke="#ff4757" stroke-width="3"/>
-            <ellipse cx="26" cy="48" rx="3.5" ry="2.2" fill="#ff6b81" opacity="0.65"/>
-            <ellipse cx="54" cy="48" rx="3.5" ry="2.2" fill="#ff6b81" opacity="0.65"/>
-            <circle cx="31" cy="39" r="2.7" fill="#2f3542"/>
-            <circle cx="31.8" cy="38.2" r="0.9" fill="#ffffff"/>
-            <circle cx="49" cy="39" r="2.7" fill="#2f3542"/>
-            <circle cx="49.8" cy="38.2" r="0.9" fill="#ffffff"/>
-            <ellipse cx="40" cy="48" rx="8.5" ry="6" fill="#ff8fa3" stroke="#ff4757" stroke-width="2.5"/>
-            <circle cx="37" cy="48" r="1.6" fill="#ff4757"/>
-            <circle cx="43" cy="48" r="1.6" fill="#ff4757"/>
-            <path d="M35 56.5C37.5 59 42.5 59 45 56.5" stroke="#ff4757" stroke-width="2.5" stroke-linecap="round"/>
+          <svg viewBox="0 0 80 80" width="86" height="86" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 31C16 20 27 17 32 26" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M58 31C64 20 53 17 48 26" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
+            <circle cx="40" cy="45" r="21" fill="#ffd1dc" stroke="#ff4757" stroke-width="3"/>
+            <ellipse cx="27" cy="48" rx="3.4" ry="2.1" fill="#ff6b81" opacity="0.65"/>
+            <ellipse cx="53" cy="48" rx="3.4" ry="2.1" fill="#ff6b81" opacity="0.65"/>
+            <circle cx="32" cy="40" r="2.6" fill="#2f3542"/>
+            <circle cx="32.8" cy="39.2" r="0.9" fill="#ffffff"/>
+            <circle cx="48" cy="40" r="2.6" fill="#2f3542"/>
+            <circle cx="48.8" cy="39.2" r="0.9" fill="#ffffff"/>
+            <ellipse cx="40" cy="48.5" rx="8.2" ry="5.8" fill="#ff8fa3" stroke="#ff4757" stroke-width="2.5"/>
+            <circle cx="37.2" cy="48.5" r="1.5" fill="#ff4757"/>
+            <circle cx="42.8" cy="48.5" r="1.5" fill="#ff4757"/>
+            <path d="M35.5 56.5C38 59 42 59 44.5 56.5" stroke="#ff4757" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M24 63C29 66.5 51 66.5 56 63" stroke="#2ed573" stroke-width="4.5" stroke-linecap="round"/>
             <g class="pig-cap-group">
-              <path d="M25 25C25 14 55 14 55 25Z" fill="#ff4757" stroke="#2f3542" stroke-width="2.3" stroke-linejoin="round"/>
-              <circle cx="40" cy="19" r="2.5" fill="#ffeaa7"/>
-              <path d="M23 25H59C62 25 63 28 58 28.5H23C21 28.5 21 25 23 25Z" fill="#2f3542"/>
-            </g>
-            <g class="pig-hand-group">
-              <path d="M62 46C65 40 64 31 58 28" stroke="#ff4757" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="57.5" cy="27.5" r="4.2" fill="#ffd1dc" stroke="#ff4757" stroke-width="2.4"/>
+              <path d="M24 26L42 10L57 26Z" fill="#ff4757" stroke="#2f3542" stroke-width="2.3" stroke-linejoin="round"/>
+              <rect x="22" y="24" width="36" height="5.5" rx="2.7" fill="#ffffff" stroke="#2f3542" stroke-width="2"/>
+              <circle cx="42" cy="10" r="4.5" fill="#ffffff" stroke="#2f3542" stroke-width="2"/>
             </g>
           </svg>
         </div>
@@ -475,7 +513,7 @@
       </div>
 
       <div class="role-cards-grid">
-        <button type="button" onclick="showScreen('screen-login-client')" class="role-choice-btn role-choice-client">
+        <button type="button" onclick="launchConfettiRain(); showScreen('screen-login-client')" class="role-choice-btn role-choice-client">
           <div class="role-choice-left">
             <span class="role-choice-icon">🛒</span>
             <span>
@@ -486,7 +524,7 @@
           <span class="role-choice-arrow">➜</span>
         </button>
 
-        <button type="button" onclick="showScreen('screen-login-admin')" class="role-choice-btn role-choice-admin">
+        <button type="button" onclick="launchConfettiRain(); showScreen('screen-login-admin')" class="role-choice-btn role-choice-admin">
           <div class="role-choice-left">
             <span class="role-choice-icon">⚙️</span>
             <span>
@@ -686,6 +724,26 @@
           </div>
         </div>
 
+        <!-- Chat previo al pedido: consultar ofertas o pedir algo que aún no está cargado -->
+        <div id="client-pre-order-chat-box" class="pre-order-chat-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+            <strong style="font-size:0.86rem; color:var(--pink-accent);">💬 Consultar antes de pedir</strong>
+            <span style="font-size:0.72rem; color:var(--text-muted);">Sin enviar capture</span>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px; line-height:1.3;">
+            ¿Buscas algún corte o producto adicional que aún no ves en la lista o quieres preguntar por las ofertas? Escríbenos aquí antes de pagar.
+          </p>
+          <div class="chat-container" style="margin-top:0;">
+            <div class="chat-messages-box" id="client-pre-chat-messages">
+              <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta para el comercio.</p>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" id="pre-chat-client-input" placeholder="Ej: ¿Tienen costilla o un corte extra hoy?" onkeydown="if(event.key==='Enter') { event.preventDefault(); sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client'); }">
+              <button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client')">Consultar</button>
+            </div>
+          </div>
+        </div>
+
         <div class="search-box">
           <span class="search-icon">🔎</span>
           <input type="text" id="search-input" placeholder="Buscar producto en todo el negocio..." oninput="handleSearchInput(this.value)">
@@ -846,6 +904,17 @@
             <button type="button" class="btn btn-success" style="flex: 1; margin-top: 0;" onclick="saveDailyOffers()">📢 Publicar Ofertas</button>
             <button type="button" class="btn btn-back" style="width: auto; margin-top: 0;" onclick="clearDailyOffers()">🗑️ Quitar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Bandeja de consultas previas al pedido con alerta sonora -->
+      <div class="card-box" style="padding: 8px; background: #fff9fb; border: 1.5px solid #ffd6de; border-radius: 8px; margin-bottom: 10px;">
+        <button type="button" class="collapsible-btn" onclick="toggleBox('box-pre-chats'); renderAdminPreChats();" style="width:100%; text-align:left; background:none; border:none; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span>💬 Consultas antes de Pedir (<span id="admin-pre-chats-count">0</span>)</span>
+          <span>▼</span>
+        </button>
+        <div id="box-pre-chats" class="collapsible-content" style="margin-top: 8px;">
+          <div id="admin-pre-chats-list"><p style="font-size:0.83rem; color:var(--text-muted); padding:4px 0;">No hay consultas previas por ahora.</p></div>
         </div>
       </div>
 
@@ -1189,6 +1258,11 @@
     var sharedAudioCtx = null;
     var welcomeModalTimer = null;
     var swRegistration = null;
+    var hasRestoredSession = false;
+
+    var preOrderChatsMap = {};
+    var prevPreChatCounts = {};
+    var isInitialPreChatLoad = true;
 
     var storeBanks = [
       'BANCO DE VENEZUELA (0102)', 'BANESCO (0134)', 'BBVA PROVINCIAL (0108)',
@@ -1201,6 +1275,44 @@
 
     var storeReceiverBanks = ['BANCO DE VENEZUELA (0102)', 'BANESCO (0134)'];
     var DELIVERY_COST_USD = 1.00;
+
+    function launchConfettiRain() {
+      var existing = document.getElementById('confetti-rain-layer');
+      if (existing) existing.remove();
+
+      var layer = document.createElement('div');
+      layer.id = 'confetti-rain-layer';
+      layer.className = 'confetti-rain-layer';
+
+      var colors = ['#ff4757', '#2ed573', '#ffa502', '#1e90ff', '#ff6b81', '#ffeaa7', '#a29bfe'];
+      var totalPieces = 48;
+
+      for (var i = 0; i < totalPieces; i++) {
+        var piece = document.createElement('span');
+        piece.className = 'confetti-piece';
+        var leftPct = Math.random() * 100;
+        var durationSec = 2.2 + (Math.random() * 1.8);
+        var delaySec = Math.random() * 0.75;
+        var bg = colors[i % colors.length];
+        var widthPx = 7 + Math.floor(Math.random() * 6);
+        var heightPx = 10 + Math.floor(Math.random() * 8);
+
+        piece.style.left = leftPct + '%';
+        piece.style.backgroundColor = bg;
+        piece.style.width = widthPx + 'px';
+        piece.style.height = heightPx + 'px';
+        piece.style.animationDuration = durationSec.toFixed(2) + 's';
+        piece.style.animationDelay = delaySec.toFixed(2) + 's';
+
+        layer.appendChild(piece);
+      }
+
+      document.body.appendChild(layer);
+      setTimeout(function() {
+        var currentLayer = document.getElementById('confetti-rain-layer');
+        if (currentLayer) currentLayer.remove();
+      }, 4600);
+    }
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -1247,7 +1359,7 @@
 
       var options = {
         body: bodyText,
-        tag: 'porkys-order-alert-' + Date.now(),
+        tag: 'porkys-alert-' + Date.now(),
         renotify: true,
         vibrate: [300, 150, 300, 150, 400],
         requireInteraction: true
@@ -1272,7 +1384,7 @@
       if (Notification.permission === 'granted') {
         updatePushNotificationStatusUI();
         playNotificationSound(false);
-        triggerSystemNotification('🥩 Porkys C.A — Prueba de Aviso', 'Así te avisará tu teléfono cuando entre un pedido nuevo en caja.');
+        triggerSystemNotification('🥩 Porkys C.A — Prueba de Aviso', 'Así te avisará tu teléfono cuando entre un pedido o consulta nueva.');
         showAlert('¡Notificación de prueba enviada al teléfono!', 'success');
         return;
       }
@@ -1281,7 +1393,7 @@
         updatePushNotificationStatusUI();
         if (permission === 'granted') {
           playNotificationSound(false);
-          triggerSystemNotification('🥩 Porkys C.A — Avisos Activados', 'Recibirás alertas aquí cuando llegue un pedido nuevo.');
+          triggerSystemNotification('🥩 Porkys C.A — Avisos Activados', 'Recibirás alertas aquí cuando llegue un pedido o consulta nueva.');
           showAlert('¡Notificaciones activadas en tu teléfono!', 'success');
         } else {
           showAlert('No se otorgó permiso de notificaciones. Revísalo en los ajustes de Chrome.', 'error');
@@ -1511,6 +1623,184 @@
       showAlert('Información de Cashea actualizada en vivo.', 'success');
     }
 
+    function notifyIncomingPreChatIfNeeded(clientCedula, messagesList) {
+      var currentCount = Array.isArray(messagesList) ? messagesList.length : 0;
+      var prevCount = prevPreChatCounts[clientCedula];
+
+      if (!isInitialPreChatLoad && typeof prevCount === 'number' && currentCount > prevCount) {
+        var lastMsg = messagesList[currentCount - 1];
+        if (lastMsg && lastMsg.sender === 'client') {
+          var clientObj = registeredClients[clientCedula];
+          var clientLabel = clientObj
+            ? (clientObj.nombre + ' ' + clientObj.apellido + ' (' + clientCedula + ')')
+            : clientCedula;
+
+          playNotificationSound(false);
+          triggerSystemNotification(
+            '💬 Consulta antes de pedir — Porkys C.A',
+            clientLabel + ': ' + (lastMsg.text || 'Nuevo mensaje')
+          );
+        }
+      }
+
+      prevPreChatCounts[clientCedula] = currentCount;
+    }
+
+    function sendPreOrderMessage(clientCedula, senderType) {
+      if (!clientCedula) return;
+      var cleanCedula = clientCedula.trim().toUpperCase();
+      var inputId = senderType === 'admin'
+        ? 'pre-chat-admin-input-' + cleanCedula
+        : 'pre-chat-client-input';
+
+      var inputElem = document.getElementById(inputId);
+      if (!inputElem) return;
+      var text = inputElem.value.trim();
+      if (!text) return;
+
+      var currentMessages = (preOrderChatsMap[cleanCedula] && Array.isArray(preOrderChatsMap[cleanCedula].messages))
+        ? preOrderChatsMap[cleanCedula].messages.slice()
+        : [];
+
+      currentMessages.push({
+        sender: senderType,
+        text: text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      inputElem.value = '';
+      prevPreChatCounts[cleanCedula] = currentMessages.length;
+
+      if (!preOrderChatsMap[cleanCedula]) {
+        preOrderChatsMap[cleanCedula] = { clientCedula: cleanCedula, messages: [] };
+      }
+      preOrderChatsMap[cleanCedula].messages = currentMessages;
+
+      if (senderType === 'client') {
+        renderClientPreChat();
+      } else {
+        renderAdminPreChats();
+      }
+
+      if (window.db && window.firebaseCollections) {
+        var db = window.db;
+        var fc = window.firebaseCollections;
+        var clientObj = registeredClients[cleanCedula];
+        var clientName = clientObj
+          ? (clientObj.nombre + ' ' + clientObj.apellido)
+          : cleanCedula;
+
+        fc.setDoc(fc.doc(db, 'pre_order_chats', cleanCedula), {
+          clientCedula: cleanCedula,
+          clientName: clientName,
+          messages: currentMessages,
+          updatedAt: Date.now()
+        }, { merge: true }).catch(function(){});
+      }
+    }
+
+    function renderClientPreChat() {
+      var boxEl = document.getElementById('client-pre-chat-messages');
+      if (!boxEl) return;
+
+      var activeElementId = document.activeElement ? document.activeElement.id : '';
+      if (activeElementId === 'pre-chat-client-input') return;
+
+      if (!activeUser || !activeUser.cedula) {
+        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Inicia sesión para consultar con el comercio.</p>';
+        return;
+      }
+
+      var cleanCedula = activeUser.cedula.trim().toUpperCase();
+      var chatDoc = preOrderChatsMap[cleanCedula];
+      var messagesList = (chatDoc && Array.isArray(chatDoc.messages)) ? chatDoc.messages : [];
+
+      if (messagesList.length === 0) {
+        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o producto adicional antes de pagar.</p>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < messagesList.length; i++) {
+        var m = messagesList[i];
+        var bubbleClass = m.sender === 'admin' ? 'admin' : 'client';
+        var senderLabel = m.sender === 'admin' ? 'Comercio: ' : 'Tú: ';
+        html += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + m.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (m.time || '') + '</span></div>';
+      }
+      boxEl.innerHTML = html;
+      boxEl.scrollTop = boxEl.scrollHeight;
+    }
+
+    function renderAdminPreChats() {
+      var container = document.getElementById('admin-pre-chats-list');
+      var countSpan = document.getElementById('admin-pre-chats-count');
+      if (!container) return;
+
+      var activeElementId = document.activeElement ? document.activeElement.id : '';
+      if (activeElementId && activeElementId.startsWith('pre-chat-admin-input-')) return;
+
+      var keys = Object.keys(preOrderChatsMap);
+      var activeThreads = [];
+      for (var i = 0; i < keys.length; i++) {
+        var docItem = preOrderChatsMap[keys[i]];
+        if (docItem && Array.isArray(docItem.messages) && docItem.messages.length > 0) {
+          activeThreads.push(docItem);
+        }
+      }
+
+      activeThreads.sort(function(a, b) {
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
+
+      if (countSpan) countSpan.textContent = activeThreads.length;
+
+      if (activeThreads.length === 0) {
+        container.innerHTML = '<p style="font-size:0.83rem; color:var(--text-muted); padding:4px 0;">No hay consultas previas por ahora.</p>';
+        return;
+      }
+
+      var html = '';
+      for (var t = 0; t < activeThreads.length; t++) {
+        var thread = activeThreads[t];
+        var cedKey = thread.clientCedula;
+        var clientInfo = registeredClients[cedKey];
+        var clientTitle = clientInfo
+          ? (clientInfo.nombre + ' ' + clientInfo.apellido + ' (' + cedKey + ')')
+          : (thread.clientName ? (thread.clientName + ' (' + cedKey + ')') : cedKey);
+
+        var msgs = thread.messages || [];
+        var lastSenderIsClient = msgs.length > 0 && msgs[msgs.length - 1].sender === 'client';
+        var badgeHtml = lastSenderIsClient
+          ? '<span style="background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:999px;">Por responder</span>'
+          : '<span style="background:#eccc68; color:#2f3542; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:999px;">Respondido</span>';
+
+        var msgsHtml = '';
+        for (var m = 0; m < msgs.length; m++) {
+          var item = msgs[m];
+          var cls = item.sender === 'admin' ? 'admin' : 'client';
+          var lbl = item.sender === 'admin' ? 'Tú (Comercio): ' : 'Cliente: ';
+          msgsHtml += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
+        }
+
+        html += '<div style="background:#fff; border:1px solid #eccc68; border-radius:8px; padding:8px; margin-bottom:8px; font-size:0.82rem;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">' +
+          '<strong>👤 ' + clientTitle + '</strong>' + badgeHtml +
+          '</div>' +
+          '<div class="chat-messages-box" id="pre-chat-admin-box-' + cedKey + '">' + msgsHtml + '</div>' +
+          '<div class="chat-input-row">' +
+          '<input type="text" id="pre-chat-admin-input-' + cedKey + '" placeholder="Responder consulta al cliente..." onkeydown="if(event.key===\'Enter\') { event.preventDefault(); sendPreOrderMessage(\'' + cedKey + '\', \'admin\'); }">' +
+          '<button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendPreOrderMessage(\'' + cedKey + '\', \'admin\')">Enviar</button>' +
+          '</div></div>';
+      }
+
+      container.innerHTML = html;
+
+      for (var b = 0; b < activeThreads.length; b++) {
+        var boxEl = document.getElementById('pre-chat-admin-box-' + activeThreads[b].clientCedula);
+        if (boxEl) boxEl.scrollTop = boxEl.scrollHeight;
+      }
+    }
+
     var catalogProducts = [];
     var exchangeRate = 60.00;
     var registeredClients = {};
@@ -1522,6 +1812,46 @@
     var pendingOrderData = null;
     var currentShiftData = null;
     var previousOrdersCount = -1;
+
+    function restoreSavedSession() {
+      if (hasRestoredSession) return;
+
+      var savedAdmin = localStorage.getItem('porkys_admin_session');
+      if (savedAdmin === 'true') {
+        hasRestoredSession = true;
+        updateStoreButtonUI();
+        updatePushNotificationStatusUI();
+        renderAdminClientsList();
+        renderAdminPreChats();
+        renderAdminStoreBanksList();
+        renderAdminPriceEditor();
+        renderAdminInventoryEditor();
+        renderAdminOrders();
+        updateDailyOffersUI();
+        updateCasheaUI();
+        showScreen('screen-admin-panel');
+        return;
+      }
+
+      var savedClientCedula = localStorage.getItem('porkys_client_session');
+      if (savedClientCedula && registeredClients && registeredClients[savedClientCedula]) {
+        hasRestoredSession = true;
+        activeUser = registeredClients[savedClientCedula];
+        var nameEl = document.getElementById('client-user-name');
+        if (nameEl) nameEl.textContent = activeUser.nombre + ' ' + activeUser.apellido;
+        currentCategoryFilter = '';
+        searchQuery = '';
+        renderCatalog();
+        renderClientPreChat();
+        renderClientHistory();
+        showScreen('screen-catalog');
+        updateClientBankSelect();
+        updateStoreReceiverBanksDisplay();
+        updateDailyOffersUI();
+        updateCasheaUI();
+        showOrderStatusUI();
+      }
+    }
 
     function notifyIncomingOrdersIfNeeded(ordersArr) {
       var newOrdersCount = ordersArr.length;
@@ -1588,6 +1918,7 @@
           updateStoreReceiverBanksDisplay();
           if (typeof renderAdminStoreBanksList === 'function') renderAdminStoreBanksList();
         }
+        restoreSavedSession();
       });
 
       fc.onSnapshot(fc.doc(db, 'config', 'catalog'), function(docSnap) {
@@ -1629,6 +1960,22 @@
         }).catch(function(e){});
       });
 
+      fc.onSnapshot(fc.collection(db, 'pre_order_chats'), function(snapshot) {
+        preOrderChatsMap = {};
+        snapshot.forEach(function(docSnap) {
+          var chatDoc = docSnap.data();
+          var cedKey = (chatDoc.clientCedula || docSnap.id || '').trim().toUpperCase();
+          if (!cedKey) return;
+          chatDoc.clientCedula = cedKey;
+          preOrderChatsMap[cedKey] = chatDoc;
+          notifyIncomingPreChatIfNeeded(cedKey, chatDoc.messages || []);
+        });
+        isInitialPreChatLoad = false;
+
+        renderClientPreChat();
+        renderAdminPreChats();
+      });
+
       fc.onSnapshot(fc.collection(db, 'clients'), function(snapshot) {
         registeredClients = {};
         snapshot.forEach(function(docSnap) {
@@ -1639,12 +1986,19 @@
         if (countSpan) countSpan.textContent = Object.keys(registeredClients).length;
         checkRecoveryLabels();
         if (typeof renderAdminClientsList === 'function') renderAdminClientsList();
+        renderAdminPreChats();
+        restoreSavedSession();
       });
     }
 
     setInterval(function() {
       var activeElementId = document.activeElement ? document.activeElement.id : '';
-      var isUserTypingInChat = activeElementId && (activeElementId.startsWith('admin-chat-input-') || activeElementId.startsWith('client-chat-input-'));
+      var isUserTypingInChat = activeElementId && (
+        activeElementId.startsWith('admin-chat-input-') ||
+        activeElementId.startsWith('client-chat-input-') ||
+        activeElementId.startsWith('pre-chat-admin-input-') ||
+        activeElementId === 'pre-chat-client-input'
+      );
       if (isUserTypingInChat) return;
 
       if (window.db && window.firebaseCollections) {
@@ -1668,7 +2022,12 @@
 
     function syncAllLiveData() {
       var activeElementId = document.activeElement ? document.activeElement.id : '';
-      var isUserTypingInChat = activeElementId && (activeElementId.startsWith('admin-chat-input-') || activeElementId.startsWith('client-chat-input-'));
+      var isUserTypingInChat = activeElementId && (
+        activeElementId.startsWith('admin-chat-input-') ||
+        activeElementId.startsWith('client-chat-input-') ||
+        activeElementId.startsWith('pre-chat-admin-input-') ||
+        activeElementId === 'pre-chat-client-input'
+      );
       if (!window.db || !window.firebaseCollections) return;
 
       var db = window.db;
@@ -1688,6 +2047,23 @@
           if (typeof renderAdminOrders === 'function') renderAdminOrders();
         }
         if (typeof renderClientHistory === 'function') renderClientHistory();
+      }).catch(function(e){});
+
+      fc.getDocs(fc.collection(db, 'pre_order_chats')).then(function(snapshot) {
+        preOrderChatsMap = {};
+        snapshot.forEach(function(docSnap) {
+          var chatDoc = docSnap.data();
+          var cedKey = (chatDoc.clientCedula || docSnap.id || '').trim().toUpperCase();
+          if (!cedKey) return;
+          chatDoc.clientCedula = cedKey;
+          preOrderChatsMap[cedKey] = chatDoc;
+          notifyIncomingPreChatIfNeeded(cedKey, chatDoc.messages || []);
+        });
+        isInitialPreChatLoad = false;
+        if (!isUserTypingInChat) {
+          renderClientPreChat();
+          renderAdminPreChats();
+        }
       }).catch(function(e){});
 
       fc.getDocs(fc.collection(db, 'config')).then(function(snapshot) {
@@ -1754,6 +2130,9 @@
       for (var i = 0; i < screens.length; i++) screens[i].classList.add('hidden');
       var target = document.getElementById(screenId);
       if (target) target.classList.remove('hidden');
+      if (screenId === 'screen-home') {
+        launchConfettiRain();
+      }
       if (screenId === 'screen-catalog') {
         currentCategoryFilter = '';
         searchQuery = '';
@@ -1764,9 +2143,11 @@
         updateDailyOffersUI();
         updateCasheaUI();
         renderCatalog();
+        renderClientPreChat();
       }
       if (screenId === 'screen-admin-panel') {
         updatePushNotificationStatusUI();
+        renderAdminPreChats();
       }
     }
 
@@ -1780,7 +2161,14 @@
     }
 
     function toggleBox(boxId) { var box = document.getElementById(boxId); if (box) box.classList.toggle('hidden'); }
-    function logout() { activeUser = null; showScreen('screen-home'); showAlert('Has cerrado sesión.', 'success'); }
+    function logout() {
+      activeUser = null;
+      hasRestoredSession = false;
+      localStorage.removeItem('porkys_client_session');
+      localStorage.removeItem('porkys_admin_session');
+      showScreen('screen-home');
+      showAlert('Has cerrado sesión.', 'success');
+    }
     function formatQtyText(qty, unit) { var unidadText = unit || 'Gr'; if (unidadText === 'Gr' || unidadText === 'Kg') { if (qty === 0.2) return '200 g'; if (qty === 0.5) return '1/2 Kg'; if (qty === 0.75) return '3/4 Kg'; if (qty === 1.0) return '1 Kg'; if (qty > 1) return qty + ' Kg'; return Math.round(qty * 1000) + ' g'; } return qty + ' Unid'; }
 
     function filterCategory(cat) {
@@ -1870,9 +2258,12 @@
         hideLoadingModal(); var user = registeredClients[fullCedula];
         if (user && user.password === pass) {
           activeUser = user;
+          hasRestoredSession = true;
+          localStorage.setItem('porkys_client_session', user.cedula);
+          localStorage.removeItem('porkys_admin_session');
           document.getElementById('client-user-name').textContent = user.nombre + ' ' + user.apellido;
           currentCategoryFilter = ''; searchQuery = '';
-          renderCatalog(); renderClientHistory(); showScreen('screen-catalog');
+          renderCatalog(); renderClientPreChat(); renderClientHistory(); showScreen('screen-catalog');
           updateClientBankSelect(); updateStoreReceiverBanksDisplay(); updateDailyOffersUI(); updateCasheaUI();
           showWelcomeModal(user.nombre + ' ' + user.apellido, false);
         } else { showAlert('Cédula o contraseña incorrectos.', 'error'); }
@@ -2554,9 +2945,13 @@
 
       if (enteredPass === currentAdminPass) {
         getAudioContext();
+        hasRestoredSession = true;
+        localStorage.setItem('porkys_admin_session', 'true');
+        localStorage.removeItem('porkys_client_session');
         updateStoreButtonUI();
         updatePushNotificationStatusUI();
         renderAdminClientsList();
+        renderAdminPreChats();
         renderAdminStoreBanksList();
         renderAdminPriceEditor();
         renderAdminInventoryEditor();
@@ -2840,6 +3235,7 @@
       updateDailyOffersUI();
       updateCasheaUI();
       updatePushNotificationStatusUI();
+      launchConfettiRain();
     });
   </script>
 </body>
