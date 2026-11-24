@@ -205,30 +205,6 @@
       border-radius: 999px;
     }
 
-    .home-offers-preview {
-      margin-top: 12px;
-      background: linear-gradient(135deg, #fff6d6 0%, #ffeaa7 100%);
-      border: 1.5px solid var(--orange-warning);
-      border-radius: 12px;
-      padding: 10px 12px;
-      text-align: center;
-    }
-
-    .home-offers-preview-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: #2f3542;
-      margin-bottom: 4px;
-    }
-
-    .home-offers-preview-body {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-dark);
-      white-space: pre-line;
-      line-height: 1.35;
-    }
-
     .role-cards-grid {
       display: flex;
       flex-direction: column;
@@ -257,18 +233,6 @@
       background: linear-gradient(135deg, var(--pink-accent), var(--pink-main));
       color: #ffffff;
       box-shadow: 0 7px 18px rgba(255, 71, 87, 0.28);
-    }
-
-    .role-choice-register {
-      background: linear-gradient(135deg, #2ed573, #20bf6b);
-      color: #ffffff;
-      box-shadow: 0 7px 18px rgba(46, 213, 115, 0.25);
-    }
-
-    .role-choice-offers {
-      background: linear-gradient(135deg, #ffa502, #ff7f50);
-      color: #ffffff;
-      box-shadow: 0 7px 18px rgba(255, 165, 2, 0.26);
     }
 
     .role-choice-admin {
@@ -313,6 +277,27 @@
       font-size: 1.15rem;
       font-weight: 800;
       opacity: 0.9;
+    }
+
+    /* Tarjeta Post-Registro: Inicia Sesión y Ve las Ofertas del Día */
+    .post-register-box {
+      background: linear-gradient(145deg, #fff9fb 0%, #fffdf5 100%);
+      border: 2px solid #ffeaa7;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .post-register-offers-card {
+      background: linear-gradient(135deg, #fff6d6 0%, #ffeaa7 100%);
+      border: 1.5px solid var(--orange-warning);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0 12px;
+      font-size: 0.84rem;
+      color: var(--text-dark);
+      white-space: pre-line;
+      line-height: 1.35;
     }
 
     /* Banner Ofertas del Día con Cerdito Divertido */
@@ -585,11 +570,6 @@
           <span class="home-perk-chip">💳 Pago Móvil y Cashea</span>
           <span class="home-perk-chip">💬 Chat en vivo</span>
         </div>
-
-        <div id="home-offers-preview" class="home-offers-preview hidden">
-          <div class="home-offers-preview-title">🔥 Ofertas del Día Activas</div>
-          <div id="home-offers-preview-text" class="home-offers-preview-body"></div>
-        </div>
       </div>
 
       <div class="role-cards-grid">
@@ -598,29 +578,7 @@
             <span class="role-choice-icon">🛒</span>
             <span>
               <span class="role-choice-title">Soy Cliente</span>
-              <span class="role-choice-desc">Inicia sesión, explora el catálogo y pide envío</span>
-            </span>
-          </div>
-          <span class="role-choice-arrow">➜</span>
-        </button>
-
-        <button type="button" onclick="launchConfettiRain(); showScreen('screen-register-client')" class="role-choice-btn role-choice-register">
-          <div class="role-choice-left">
-            <span class="role-choice-icon">✨</span>
-            <span>
-              <span class="role-choice-title">Regístrate y ya</span>
-              <span class="role-choice-desc">Crea tu cuenta rápido para pedir a domicilio</span>
-            </span>
-          </div>
-          <span class="role-choice-arrow">➜</span>
-        </button>
-
-        <button type="button" onclick="openHomeOffersSection()" class="role-choice-btn role-choice-offers">
-          <div class="role-choice-left">
-            <span class="role-choice-icon">🔥</span>
-            <span>
-              <span class="role-choice-title">Consulta las ofertas del día</span>
-              <span class="role-choice-desc" id="home-offers-btn-desc">Mira las promociones especiales de hoy</span>
+              <span class="role-choice-desc">Inicia sesión, regístrate y pide envío a domicilio</span>
             </span>
           </div>
           <span class="role-choice-arrow">➜</span>
@@ -641,6 +599,21 @@
 
     <section id="screen-login-client" class="screen hidden">
       <h2>Inicia Sesión - Cliente</h2>
+
+      <div id="post-register-actions-card" class="post-register-box hidden">
+        <strong style="color:#155724; font-size:0.92rem; display:block; margin-bottom:4px;">
+          🎉 ¡Cuenta creada con éxito! Ya puedes iniciar sesión y ver las ofertas del día
+        </strong>
+        <p id="post-register-client-summary" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;"></p>
+
+        <div id="post-register-offers-box" class="post-register-offers-card hidden">
+          <strong style="display:block; color:var(--pink-accent); margin-bottom:4px;">🔥 Ofertas del Día en Porkys C.A:</strong>
+          <div id="post-register-offers-text"></div>
+        </div>
+
+        <button type="button" class="btn btn-primary" style="margin-top:0;" onclick="focusLoginCedula()">🔐 Inicia Sesión Ahora</button>
+      </div>
+
       <form id="form-login-client" onsubmit="handleLoginClient(event)">
         <div class="form-group">
           <label>Cédula (Usuario):</label>
@@ -827,7 +800,6 @@
           </div>
         </div>
 
-        <!-- Chat previo al pedido: consultar dudas o pedir algo antes de armar el pedido -->
         <div id="client-pre-order-chat-box" class="pre-order-chat-card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
             <strong style="font-size:0.86rem; color:var(--pink-accent);">💬 Chat con el Comercio</strong>
@@ -1010,7 +982,6 @@
         </div>
       </div>
 
-      <!-- Bandeja de consultas previas al pedido con alerta sonora -->
       <div class="card-box" style="padding: 8px; background: #fff9fb; border: 1.5px solid #ffd6de; border-radius: 8px; margin-bottom: 10px;">
         <button type="button" class="collapsible-btn" onclick="toggleBox('box-pre-chats'); renderAdminPreChats();" style="width:100%; text-align:left; background:none; border:none; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
           <span>💬 Consultas antes de Pedir (<span id="admin-pre-chats-count">0</span>)</span>
@@ -1464,20 +1435,34 @@
       }, 4600);
     }
 
-    function openHomeOffersSection() {
-      launchConfettiRain();
-      var previewBox = document.getElementById('home-offers-preview');
-      var previewText = document.getElementById('home-offers-preview-text');
-      if (previewBox && previewText) {
-        if (dailyOffersText && dailyOffersText.trim() !== '') {
-          previewText.textContent = dailyOffersText;
-          previewBox.classList.remove('hidden');
-          previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-          previewText.textContent = 'Hoy no hay ofertas especiales cargadas todavía. ¡Inicia sesión para ver el catálogo completo!';
-          previewBox.classList.remove('hidden');
+    function updatePostRegisterCard(clientInfo) {
+      var card = document.getElementById('post-register-actions-card');
+      var summaryEl = document.getElementById('post-register-client-summary');
+      var offersBox = document.getElementById('post-register-offers-box');
+      var offersTextEl = document.getElementById('post-register-offers-text');
+      if (!card) return;
+
+      if (clientInfo) {
+        if (summaryEl) {
+          summaryEl.textContent = 'Usuario listo: ' + clientInfo.nombre + ' ' + clientInfo.apellido + ' (' + clientInfo.cedula + '). Escribe tu clave abajo para entrar.';
         }
+        if (offersBox && offersTextEl) {
+          if (dailyOffersText && dailyOffersText.trim() !== '') {
+            offersTextEl.textContent = dailyOffersText;
+            offersBox.classList.remove('hidden');
+          } else {
+            offersBox.classList.add('hidden');
+          }
+        }
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
       }
+    }
+
+    function focusLoginCedula() {
+      var passInput = document.getElementById('login-password');
+      if (passInput) passInput.focus();
     }
 
     function getClientDisplayName(cedulaOrObj) {
@@ -1760,7 +1745,7 @@
       if (farewellModalTimer) clearTimeout(farewellModalTimer);
       farewellModalTimer = setTimeout(function() {
         closeFarewellModal();
-      }, 4200);
+      }, 7000);
     }
 
     function closeFarewellModal() {
@@ -1776,9 +1761,8 @@
       var banner = document.getElementById('daily-offers-banner');
       var textEl = document.getElementById('daily-offers-text');
       var adminInput = document.getElementById('admin-offers-input');
-      var homeBtnDesc = document.getElementById('home-offers-btn-desc');
-      var homePreviewBox = document.getElementById('home-offers-preview');
-      var homePreviewText = document.getElementById('home-offers-preview-text');
+      var postRegOffersBox = document.getElementById('post-register-offers-box');
+      var postRegOffersText = document.getElementById('post-register-offers-text');
 
       if (adminInput && document.activeElement !== adminInput) {
         adminInput.value = dailyOffersText;
@@ -1786,16 +1770,14 @@
 
       var hasOffers = !!(dailyOffersText && dailyOffersText.trim() !== '');
 
-      if (homeBtnDesc) {
-        homeBtnDesc.textContent = hasOffers
-          ? '¡Hay promociones activas hoy! Tócalo para verlas'
-          : 'Revisa las promociones especiales de hoy';
-      }
-
-      if (homePreviewBox && homePreviewText && !homePreviewBox.classList.contains('hidden')) {
-        homePreviewText.textContent = hasOffers
-          ? dailyOffersText
-          : 'Hoy no hay ofertas especiales cargadas todavía. ¡Inicia sesión para ver el catálogo completo!';
+      if (postRegOffersBox && postRegOffersText) {
+        if (hasOffers) {
+          postRegOffersText.textContent = dailyOffersText;
+          postRegOffersBox.classList.remove('hidden');
+        } else {
+          postRegOffersText.textContent = '';
+          postRegOffersBox.classList.add('hidden');
+        }
       }
 
       if (!banner || !textEl) return;
@@ -2374,6 +2356,9 @@
       if (target) target.classList.remove('hidden');
       if (screenId === 'screen-home') {
         launchConfettiRain();
+        updatePostRegisterCard(null);
+      }
+      if (screenId === 'screen-login-client') {
         updateDailyOffersUI();
       }
       if (screenId === 'screen-catalog') {
@@ -2489,7 +2474,18 @@
       showLoadingModal('Registrando cliente...');
       var clientData = { nombre: nombre, apellido: apellido, cedula: fullCedula, telefono: telefono, direccion: fullDireccion, preg1: preg1, resp1: resp1, preg2: preg2, resp2: resp2, password: pass1 };
       var db = window.db, fc = window.firebaseCollections;
-      fc.setDoc(fc.doc(db, 'clients', fullCedula), clientData).then(function() { hideLoadingModal(); showAlert('Registro exitoso. Inicia sesión.', 'success'); showScreen('screen-login-client'); e.target.reset(); }).catch(function() { hideLoadingModal(); showAlert('Error al registrar en la nube.', 'error'); });
+      fc.setDoc(fc.doc(db, 'clients', fullCedula), clientData).then(function() {
+        hideLoadingModal();
+        registeredClients[fullCedula] = clientData;
+        var loginNac = document.getElementById('login-nac');
+        var loginCed = document.getElementById('login-cedula');
+        if (loginNac) loginNac.value = nac;
+        if (loginCed) loginCed.value = numCedula;
+        updatePostRegisterCard(clientData);
+        showScreen('screen-login-client');
+        showAlert('¡Registro exitoso! Ahora inicia sesión y mira las ofertas del día.', 'success');
+        e.target.reset();
+      }).catch(function() { hideLoadingModal(); showAlert('Error al registrar en la nube.', 'error'); });
     }
 
     function checkRecoveryLabels() {
@@ -2510,6 +2506,7 @@
         if (user && user.password === pass) {
           activeUser = user;
           hasRestoredSession = true;
+          updatePostRegisterCard(null);
           localStorage.setItem('porkys_client_session', user.cedula);
           localStorage.removeItem('porkys_admin_session');
           document.getElementById('client-user-name').textContent = user.nombre + ' ' + user.apellido;
