@@ -112,23 +112,44 @@
       background: linear-gradient(160deg, #fff8fa 0%, #ffffff 55%, #fff9e6 100%);
       border: 2px solid #ffeaa7;
       border-radius: 18px;
-      padding: 18px 14px 14px;
+      padding: 18px 14px 16px;
       margin-bottom: 16px;
       text-align: center;
       box-shadow: 0 10px 24px rgba(255, 71, 87, 0.12);
     }
 
-    .home-pill-badge {
+    .home-header-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .home-location-badge {
       display: inline-block;
-      background: #ffeaa7;
-      color: #2f3542;
-      font-size: 0.72rem;
+      background: #fff0f3;
+      color: var(--pink-accent);
+      border: 1px solid #ffd6de;
+      font-size: 0.74rem;
       font-weight: 800;
       padding: 4px 12px;
       border-radius: 20px;
+      letter-spacing: 0.4px;
+    }
+
+    .home-christmas-banner {
+      display: inline-block;
+      background: #ffeaa7;
+      color: #2f3542;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 20px;
       letter-spacing: 0.5px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 6px rgba(255, 165, 2, 0.2);
+      box-shadow: 0 2px 6px rgba(255, 165, 2, 0.22);
     }
 
     .home-mascot-stage {
@@ -156,6 +177,7 @@
       font-weight: 800;
       line-height: 1.25;
       margin-bottom: 6px;
+      text-align: center;
     }
 
     .home-subtitle {
@@ -163,6 +185,7 @@
       font-size: 0.85rem;
       line-height: 1.35;
       margin-bottom: 12px;
+      text-align: center;
     }
 
     .home-perks-strip {
@@ -180,6 +203,30 @@
       font-weight: 700;
       padding: 4px 9px;
       border-radius: 999px;
+    }
+
+    .home-offers-preview {
+      margin-top: 12px;
+      background: linear-gradient(135deg, #fff6d6 0%, #ffeaa7 100%);
+      border: 1.5px solid var(--orange-warning);
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .home-offers-preview-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #2f3542;
+      margin-bottom: 4px;
+    }
+
+    .home-offers-preview-body {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      white-space: pre-line;
+      line-height: 1.35;
     }
 
     .role-cards-grid {
@@ -210,6 +257,18 @@
       background: linear-gradient(135deg, var(--pink-accent), var(--pink-main));
       color: #ffffff;
       box-shadow: 0 7px 18px rgba(255, 71, 87, 0.28);
+    }
+
+    .role-choice-register {
+      background: linear-gradient(135deg, #2ed573, #20bf6b);
+      color: #ffffff;
+      box-shadow: 0 7px 18px rgba(46, 213, 115, 0.25);
+    }
+
+    .role-choice-offers {
+      background: linear-gradient(135deg, #ffa502, #ff7f50);
+      color: #ffffff;
+      box-shadow: 0 7px 18px rgba(255, 165, 2, 0.26);
     }
 
     .role-choice-admin {
@@ -246,7 +305,7 @@
     .role-choice-desc {
       display: block;
       font-size: 0.78rem;
-      opacity: 0.92;
+      opacity: 0.94;
       margin-top: 2px;
     }
 
@@ -382,7 +441,7 @@
       margin-bottom: 12px;
     }
 
-    /* Modal Moderno de Bienvenida */
+    /* Modal Moderno de Bienvenida y Despedida */
     .welcome-splash-overlay {
       position: fixed;
       inset: 0;
@@ -419,6 +478,16 @@
       justify-content: center;
       box-shadow: 0 8px 20px rgba(255, 107, 129, 0.25);
       border: 3px solid #ffffff;
+    }
+
+    .farewell-sign-group {
+      transform-origin: 55px 46px;
+      animation: farewellSignRock 1.8s ease-in-out infinite;
+    }
+
+    @keyframes farewellSignRock {
+      0%, 100% { transform: rotate(-3deg) translateY(0px); }
+      50% { transform: rotate(4deg) translateY(-3px); }
     }
 
     .pig-cap-group {
@@ -479,7 +548,11 @@
 
     <section id="screen-home" class="screen">
       <div class="home-showcase">
-        <span class="home-pill-badge">🎄 FELIZ NAVIDAD • ENVÍOS EN ALTAGRACIA DE ORITUCO</span>
+        <div class="home-header-stack">
+          <span class="home-location-badge">📍 Envíos Altagracia de Orituco</span>
+          <span class="home-christmas-banner">🎄 Feliz Navidad</span>
+        </div>
+
         <div class="home-mascot-stage">
           <svg viewBox="0 0 80 80" width="86" height="86" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M22 31C16 20 27 17 32 26" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
@@ -503,12 +576,19 @@
             </g>
           </svg>
         </div>
+
         <h2 class="home-title">¡Carnes, charcutería, víveres y limpieza a tu puerta!</h2>
         <p class="home-subtitle">Haz tu pedido rápido desde casa o entra al panel para administrar la tienda.</p>
+
         <div class="home-perks-strip">
           <span class="home-perk-chip">🥩 Cortes frescos</span>
           <span class="home-perk-chip">💳 Pago Móvil y Cashea</span>
           <span class="home-perk-chip">💬 Chat en vivo</span>
+        </div>
+
+        <div id="home-offers-preview" class="home-offers-preview hidden">
+          <div class="home-offers-preview-title">🔥 Ofertas del Día Activas</div>
+          <div id="home-offers-preview-text" class="home-offers-preview-body"></div>
         </div>
       </div>
 
@@ -518,7 +598,29 @@
             <span class="role-choice-icon">🛒</span>
             <span>
               <span class="role-choice-title">Soy Cliente</span>
-              <span class="role-choice-desc">Explora el catálogo, arma tu carrito y pide envío</span>
+              <span class="role-choice-desc">Inicia sesión, explora el catálogo y pide envío</span>
+            </span>
+          </div>
+          <span class="role-choice-arrow">➜</span>
+        </button>
+
+        <button type="button" onclick="launchConfettiRain(); showScreen('screen-register-client')" class="role-choice-btn role-choice-register">
+          <div class="role-choice-left">
+            <span class="role-choice-icon">✨</span>
+            <span>
+              <span class="role-choice-title">Regístrate y ya</span>
+              <span class="role-choice-desc">Crea tu cuenta rápido para pedir a domicilio</span>
+            </span>
+          </div>
+          <span class="role-choice-arrow">➜</span>
+        </button>
+
+        <button type="button" onclick="openHomeOffersSection()" class="role-choice-btn role-choice-offers">
+          <div class="role-choice-left">
+            <span class="role-choice-icon">🔥</span>
+            <span>
+              <span class="role-choice-title">Consulta las ofertas del día</span>
+              <span class="role-choice-desc" id="home-offers-btn-desc">Mira las promociones especiales de hoy</span>
             </span>
           </div>
           <span class="role-choice-arrow">➜</span>
@@ -649,6 +751,7 @@
         </div>
         <button type="submit" class="btn btn-primary">Registrarme</button>
         <p class="switch-link">¿Ya tienes cuenta? <button type="button" onclick="showScreen('screen-login-client')">Inicia sesión</button></p>
+        <button type="button" class="btn btn-back" onclick="showScreen('screen-home')">Volver</button>
       </form>
     </section>
 
@@ -1132,6 +1235,52 @@
       </div>
     </div>
 
+    <!-- MODAL DE DESPEDIDA CON CERDITO MOSTRANDO CARTEL -->
+    <div id="farewell-splash-modal" class="welcome-splash-overlay hidden" onclick="closeFarewellModal()">
+      <div class="welcome-splash-card" onclick="event.stopPropagation()">
+        <div class="pig-cap-wrapper">
+          <svg viewBox="0 0 88 80" width="104" height="96" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 32C12 20 23 17 28 27" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M48 32C54 20 43 17 38 27" fill="#ff6b81" stroke="#ff4757" stroke-width="2.8" stroke-linecap="round"/>
+            <circle cx="33" cy="46" r="20" fill="#ffd1dc" stroke="#ff4757" stroke-width="3"/>
+            <ellipse cx="21" cy="49" rx="3" ry="1.9" fill="#ff6b81" opacity="0.65"/>
+            <ellipse cx="45" cy="49" rx="3" ry="1.9" fill="#ff6b81" opacity="0.65"/>
+            <circle cx="25" cy="41" r="2.4" fill="#2f3542"/>
+            <circle cx="25.7" cy="40.3" r="0.8" fill="#ffffff"/>
+            <circle cx="41" cy="41" r="2.4" fill="#2f3542"/>
+            <circle cx="41.7" cy="40.3" r="0.8" fill="#ffffff"/>
+            <ellipse cx="33" cy="49" rx="7.6" ry="5.4" fill="#ff8fa3" stroke="#ff4757" stroke-width="2.4"/>
+            <circle cx="30.3" cy="49" r="1.4" fill="#ff4757"/>
+            <circle cx="35.7" cy="49" r="1.4" fill="#ff4757"/>
+            <path d="M28.5 57C31 59.5 35 59.5 37.5 57" stroke="#ff4757" stroke-width="2.4" stroke-linecap="round"/>
+            <g class="farewell-sign-group">
+              <line x1="48" y1="54" x2="54" y2="38" stroke="#2f3542" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="44" y="13" width="38" height="26" rx="6" fill="#ffeaa7" stroke="#ff4757" stroke-width="2.4"/>
+              <text x="63" y="24" text-anchor="middle" fill="#2f3542" font-size="6.8" font-weight="900">¡GRACIAS!</text>
+              <text x="63" y="33.5" text-anchor="middle" fill="#ff4757" font-size="6.2" font-weight="800">VUELVE PRONTO</text>
+              <circle cx="48" cy="54" r="4" fill="#ffd1dc" stroke="#ff4757" stroke-width="2.2"/>
+            </g>
+          </svg>
+        </div>
+
+        <span style="display:inline-block; background:#ffeaa7; color:#2f3542; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:20px; letter-spacing:0.5px; margin-bottom:6px;">
+          🐷 PORKYS C.A • ALTAGRACIA DE ORITUCO
+        </span>
+        <h3 style="color: var(--pink-accent); font-size: 1.25rem; font-weight: 800; margin-bottom: 6px;">
+          Gracias por preferirnos !
+        </h3>
+        <p id="farewell-user-name" style="font-size: 0.9rem; font-weight: 700; color: var(--text-dark); margin-bottom: 4px;">
+          ¡Hasta luego!
+        </p>
+        <p style="font-size: 0.86rem; font-weight: 600; color: var(--text-muted); margin-bottom: 16px; line-height: 1.35;">
+          Esperamos verte pronto , aquí siempre te esperamos con frescura y buena atención.
+        </p>
+        <button type="button" class="btn btn-primary" style="border-radius: 10px; font-size: 0.95rem; padding: 11px;" onclick="closeFarewellModal()">
+          👋 Ir al inicio
+        </button>
+      </div>
+    </div>
+
     <!-- VENTANAS MODALES -->
     <div id="loading-modal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:999;">
       <div class="modal-content" style="background:white; max-width: 280px; text-align: center; padding: 22px; border-radius: 10px;">
@@ -1257,6 +1406,7 @@
     var notificationSoundType = 'cash';
     var sharedAudioCtx = null;
     var welcomeModalTimer = null;
+    var farewellModalTimer = null;
     var swRegistration = null;
     var hasRestoredSession = false;
 
@@ -1312,6 +1462,22 @@
         var currentLayer = document.getElementById('confetti-rain-layer');
         if (currentLayer) currentLayer.remove();
       }, 4600);
+    }
+
+    function openHomeOffersSection() {
+      launchConfettiRain();
+      var previewBox = document.getElementById('home-offers-preview');
+      var previewText = document.getElementById('home-offers-preview-text');
+      if (previewBox && previewText) {
+        if (dailyOffersText && dailyOffersText.trim() !== '') {
+          previewText.textContent = dailyOffersText;
+          previewBox.classList.remove('hidden');
+          previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          previewText.textContent = 'Hoy no hay ofertas especiales cargadas todavía. ¡Inicia sesión para ver el catálogo completo!';
+          previewBox.classList.remove('hidden');
+        }
+      }
     }
 
     function getClientDisplayName(cedulaOrObj) {
@@ -1580,17 +1746,60 @@
       if (modal) modal.classList.add('hidden');
     }
 
+    function showFarewellModal(clientName) {
+      var modal = document.getElementById('farewell-splash-modal');
+      var nameEl = document.getElementById('farewell-user-name');
+      if (!modal) return;
+
+      if (nameEl) {
+        nameEl.textContent = clientName ? ('¡Hasta luego, ' + clientName + '!') : '¡Hasta luego!';
+      }
+
+      modal.classList.remove('hidden');
+
+      if (farewellModalTimer) clearTimeout(farewellModalTimer);
+      farewellModalTimer = setTimeout(function() {
+        closeFarewellModal();
+      }, 4200);
+    }
+
+    function closeFarewellModal() {
+      if (farewellModalTimer) {
+        clearTimeout(farewellModalTimer);
+        farewellModalTimer = null;
+      }
+      var modal = document.getElementById('farewell-splash-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
     function updateDailyOffersUI() {
       var banner = document.getElementById('daily-offers-banner');
       var textEl = document.getElementById('daily-offers-text');
       var adminInput = document.getElementById('admin-offers-input');
+      var homeBtnDesc = document.getElementById('home-offers-btn-desc');
+      var homePreviewBox = document.getElementById('home-offers-preview');
+      var homePreviewText = document.getElementById('home-offers-preview-text');
 
       if (adminInput && document.activeElement !== adminInput) {
         adminInput.value = dailyOffersText;
       }
 
+      var hasOffers = !!(dailyOffersText && dailyOffersText.trim() !== '');
+
+      if (homeBtnDesc) {
+        homeBtnDesc.textContent = hasOffers
+          ? '¡Hay promociones activas hoy! Tócalo para verlas'
+          : 'Revisa las promociones especiales de hoy';
+      }
+
+      if (homePreviewBox && homePreviewText && !homePreviewBox.classList.contains('hidden')) {
+        homePreviewText.textContent = hasOffers
+          ? dailyOffersText
+          : 'Hoy no hay ofertas especiales cargadas todavía. ¡Inicia sesión para ver el catálogo completo!';
+      }
+
       if (!banner || !textEl) return;
-      if (dailyOffersText && dailyOffersText.trim() !== '') {
+      if (hasOffers) {
         textEl.textContent = dailyOffersText;
         banner.classList.remove('hidden');
       } else {
@@ -2165,6 +2374,7 @@
       if (target) target.classList.remove('hidden');
       if (screenId === 'screen-home') {
         launchConfettiRain();
+        updateDailyOffersUI();
       }
       if (screenId === 'screen-catalog') {
         currentCategoryFilter = '';
@@ -2195,12 +2405,20 @@
 
     function toggleBox(boxId) { var box = document.getElementById(boxId); if (box) box.classList.toggle('hidden'); }
     function logout() {
+      var wasClient = !!(activeUser && activeUser.cedula);
+      var clientName = wasClient ? ((activeUser.nombre || '') + ' ' + (activeUser.apellido || '')).trim() : '';
+
       activeUser = null;
       hasRestoredSession = false;
       localStorage.removeItem('porkys_client_session');
       localStorage.removeItem('porkys_admin_session');
       showScreen('screen-home');
-      showAlert('Has cerrado sesión.', 'success');
+
+      if (wasClient) {
+        showFarewellModal(clientName);
+      } else {
+        showAlert('Has cerrado sesión.', 'success');
+      }
     }
     function formatQtyText(qty, unit) { var unidadText = unit || 'Gr'; if (unidadText === 'Gr' || unidadText === 'Kg') { if (qty === 0.2) return '200 g'; if (qty === 0.5) return '1/2 Kg'; if (qty === 0.75) return '3/4 Kg'; if (qty === 1.0) return '1 Kg'; if (qty > 1) return qty + ' Kg'; return Math.round(qty * 1000) + ' g'; } return qty + ' Unid'; }
 
