@@ -410,13 +410,29 @@
     .alert-box.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
     /* Estilos del Chat */
-    .chat-container { background: #f8f9fa; border: 1px solid #eccc68; border-radius: 8px; padding: 8px; margin-top: 8px; }
-    .chat-messages-box { max-height: 140px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 6px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
-    .chat-bubble { padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; max-width: 85%; line-height: 1.2; word-break: break-word; }
+    .chat-container { position: relative; background: #f8f9fa; border: 1px solid #eccc68; border-radius: 8px; padding: 8px; margin-top: 8px; }
+    .chat-messages-box { position: relative; max-height: 215px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 6px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .chat-bubble { padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; max-width: 85%; line-height: 1.25; word-break: break-word; }
     .chat-bubble.admin { background: #ffeaa7; color: #2f3542; align-self: flex-start; border-bottom-left-radius: 2px; }
     .chat-bubble.client { background: var(--pink-accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     .chat-input-row { display: flex; gap: 4px; }
     .chat-input-row input { flex: 1; padding: 6px 8px; font-size: 0.82rem; border: 1px solid #ccc; border-radius: 6px; outline: none; background: #fff; }
+    .chat-new-msg-btn {
+      position: sticky;
+      bottom: 4px;
+      align-self: center;
+      background: var(--pink-accent);
+      color: #ffffff;
+      border: 1.5px solid #ffffff;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(47, 53, 66, 0.25);
+      z-index: 5;
+      margin-top: 4px;
+    }
 
     .pre-order-chat-card {
       background: #fff9fb;
@@ -809,7 +825,7 @@
             ¿Dudas, inquietudes? ¿Deseas contactar con el Comercio antes de armar tu pedido?
           </p>
           <div class="chat-container" style="margin-top:0;">
-            <div class="chat-messages-box" id="client-pre-chat-messages">
+            <div class="chat-messages-box" id="client-pre-chat-messages" onscroll="handleChatScroll('client-pre-chat-messages')">
               <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o inquietud para el comercio.</p>
             </div>
             <div class="chat-input-row">
@@ -949,7 +965,8 @@
               <option value="bell">Campana Suave</option>
               <option value="digital">Tono Digital</option>
             </select>
-            <button type="button" class="btn btn-sm btn-info" onclick="playNotificationSound(true)">🔊 Probar</button>
+            <button type="button" class="btn btn-sm btn-info" onclick="playNotificationSound(true)">🔊 Probar Pedido</button>
+            <button type="button" class="btn btn-sm btn-warning" onclick="playChatBellSound()">🔔 Chat</button>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed #eee;">
             <span id="push-notif-status" style="font-size:0.78rem; color:var(--text-muted);">📲 Avisos del sistema: Verificando...</span>
@@ -1383,7 +1400,12 @@
 
     var preOrderChatsMap = {};
     var prevPreChatCounts = {};
+    var prevOrderChatCounts = {};
     var isInitialPreChatLoad = true;
+    var isInitialOrderChatLoad = true;
+
+    var chatLastRenderedCounts = {};
+    var chatHasUnreadBelow = {};
 
     var storeBanks = [
       'BANCO DE VENEZUELA (0102)', 'BANESCO (0134)', 'BBVA PROVINCIAL (0108)',
@@ -1491,6 +1513,81 @@
       return (msgItem.senderName || fallbackClientName || 'Cliente') + ': ';
     }
 
+    function isChatNearBottom(boxEl) {
+      if (!boxEl) return true;
+      return (boxEl.scrollHeight - boxEl.scrollTop - boxEl.clientHeight) <= 50;
+    }
+
+    function scrollChatToBottom(boxId) {
+      var boxEl = document.getElementById(boxId);
+      if (!boxEl) return;
+      boxEl.scrollTop = boxEl.scrollHeight;
+      chatHasUnreadBelow[boxId] = false;
+      var btn = document.getElementById('chat-unread-btn-' + boxId);
+      if (btn) btn.classList.add('hidden');
+    }
+
+    function handleChatScroll(boxId) {
+      var boxEl = document.getElementById(boxId);
+      if (!boxEl) return;
+      if (isChatNearBottom(boxEl)) {
+        chatHasUnreadBelow[boxId] = false;
+        var btn = document.getElementById('chat-unread-btn-' + boxId);
+        if (btn) btn.classList.add('hidden');
+      }
+    }
+
+    function applySmartChatScroll(boxId, currentMsgCount, forceScroll) {
+      var boxEl = document.getElementById(boxId);
+      if (!boxEl) return;
+
+      var prevRenderedCount = chatLastRenderedCounts[boxId] || 0;
+      var nearBottom = isChatNearBottom(boxEl);
+
+      if (forceScroll || prevRenderedCount === 0) {
+        boxEl.scrollTop = boxEl.scrollHeight;
+        chatHasUnreadBelow[boxId] = false;
+      } else if (currentMsgCount > prevRenderedCount) {
+        if (nearBottom) {
+          boxEl.scrollTop = boxEl.scrollHeight;
+          chatHasUnreadBelow[boxId] = false;
+        } else {
+          chatHasUnreadBelow[boxId] = true;
+        }
+      }
+
+      chatLastRenderedCounts[boxId] = currentMsgCount;
+
+      var btn = document.getElementById('chat-unread-btn-' + boxId);
+      if (btn) {
+        if (chatHasUnreadBelow[boxId] && !isChatNearBottom(boxEl)) {
+          btn.classList.remove('hidden');
+        } else {
+          btn.classList.add('hidden');
+        }
+      }
+    }
+
+    function buildChatBoxHtml(boxId, messagesList, defaultClientName, emptyText) {
+      var hiddenClass = chatHasUnreadBelow[boxId] ? '' : ' hidden';
+      var html = '<div class="chat-messages-box" id="' + boxId + '" onscroll="handleChatScroll(\'' + boxId + '\')">';
+
+      if (!messagesList || messagesList.length === 0) {
+        html += '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">' + emptyText + '</p>';
+      } else {
+        for (var m = 0; m < messagesList.length; m++) {
+          var item = messagesList[m];
+          var cls = item.sender === 'admin' ? 'admin' : 'client';
+          var lbl = getChatMessageAuthorLabel(item, defaultClientName);
+          html += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
+        }
+      }
+
+      html += '<button type="button" id="chat-unread-btn-' + boxId + '" class="chat-new-msg-btn' + hiddenClass + '" onclick="scrollChatToBottom(\'' + boxId + '\')">⬇️ Nuevo mensaje abajo</button>';
+      html += '</div>';
+      return html;
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js').then(function(reg) {
@@ -1592,6 +1689,40 @@
       return sharedAudioCtx;
     }
 
+    /* Campanazo corto y limpio para cada mensaje nuevo de chat */
+    function playChatBellSound() {
+      try {
+        var audioCtx = getAudioContext();
+        if (!audioCtx) return;
+
+        var now = audioCtx.currentTime;
+        var masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(1.15, now);
+        masterGain.connect(audioCtx.destination);
+
+        var partials = [
+          { freq: 1174.66, amp: 0.45, decay: 0.65, type: 'sine' },
+          { freq: 2349.32, amp: 0.25, decay: 0.35, type: 'sine' },
+          { freq: 3520.00, amp: 0.12, decay: 0.18, type: 'triangle' }
+        ];
+
+        for (var i = 0; i < partials.length; i++) {
+          var p = partials[i];
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = p.type;
+          osc.frequency.setValueAtTime(p.freq, now);
+          gain.gain.setValueAtTime(p.amp, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + p.decay);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start(now);
+          osc.stop(now + p.decay + 0.02);
+        }
+      } catch (e) {}
+    }
+
+    /* Sonido largo para cuando llega un pedido nuevo */
     function playNotificationSound(isTest) {
       try {
         var audioCtx = getAudioContext();
@@ -1852,15 +1983,45 @@
             ? (clientObj.nombre + ' ' + clientObj.apellido + ' (' + clientCedula + ')')
             : clientCedula;
 
-          playNotificationSound(false);
+          playChatBellSound();
           triggerSystemNotification(
-            '💬 Consulta antes de pedir — Porkys C.A',
+            '🔔 Nuevo mensaje de chat — Porkys C.A',
             clientLabel + ': ' + (lastMsg.text || 'Nuevo mensaje')
           );
         }
       }
 
       prevPreChatCounts[clientCedula] = currentCount;
+    }
+
+    function notifyIncomingOrderChatsIfNeeded(ordersArr) {
+      if (!Array.isArray(ordersArr)) return;
+
+      for (var i = 0; i < ordersArr.length; i++) {
+        var ord = ordersArr[i];
+        if (!ord || !ord.id) continue;
+        var key = String(ord.id);
+        var msgs = Array.isArray(ord.messages) ? ord.messages : [];
+        var currentCount = msgs.length;
+        var prevCount = prevOrderChatCounts[key];
+
+        if (!isInitialOrderChatLoad && typeof prevCount === 'number' && currentCount > prevCount) {
+          var lastMsg = msgs[currentCount - 1];
+          var isAdminView = localStorage.getItem('porkys_admin_session') === 'true';
+          var isClientView = !!(activeUser && activeUser.cedula && ord.client && ord.client.cedula &&
+            ord.client.cedula.trim().toUpperCase() === activeUser.cedula.trim().toUpperCase());
+
+          if (lastMsg && lastMsg.sender === 'client' && isAdminView) {
+            playChatBellSound();
+          } else if (lastMsg && lastMsg.sender === 'admin' && isClientView) {
+            playChatBellSound();
+          }
+        }
+
+        prevOrderChatCounts[key] = currentCount;
+      }
+
+      isInitialOrderChatLoad = false;
     }
 
     function sendPreOrderMessage(clientCedula, senderType) {
@@ -1900,8 +2061,10 @@
 
       if (senderType === 'client') {
         renderClientPreChat();
+        applySmartChatScroll('client-pre-chat-messages', currentMessages.length, true);
       } else {
         renderAdminPreChats();
+        applySmartChatScroll('pre-chat-admin-box-' + cleanCedula, currentMessages.length, true);
       }
 
       if (window.db && window.firebaseCollections) {
@@ -1919,14 +2082,16 @@
     }
 
     function renderClientPreChat() {
-      var boxEl = document.getElementById('client-pre-chat-messages');
-      if (!boxEl) return;
+      var wrapperEl = document.getElementById('client-pre-chat-messages');
+      if (!wrapperEl || !wrapperEl.parentNode) return;
 
       var activeElementId = document.activeElement ? document.activeElement.id : '';
       if (activeElementId === 'pre-chat-client-input') return;
 
       if (!activeUser || !activeUser.cedula) {
-        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Inicia sesión para consultar con el comercio.</p>';
+        var tempDiv = document.createElement('div');
+        tempDiv.innerHTML = buildChatBoxHtml('client-pre-chat-messages', [], 'Cliente', 'Inicia sesión para consultar con el comercio.');
+        wrapperEl.parentNode.replaceChild(tempDiv.firstChild, wrapperEl);
         return;
       }
 
@@ -1935,22 +2100,12 @@
       var messagesList = (chatDoc && Array.isArray(chatDoc.messages)) ? chatDoc.messages : [];
       var defaultClientName = getClientDisplayName(activeUser);
 
-      if (messagesList.length === 0) {
-        boxEl.innerHTML = '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu duda o inquietud antes de armar tu pedido.</p>';
-        return;
-      }
+      var newBoxHtml = buildChatBoxHtml('client-pre-chat-messages', messagesList, defaultClientName, 'Escribe tu duda o inquietud antes de armar tu pedido.');
+      var tempContainer = document.createElement('div');
+      tempContainer.innerHTML = newBoxHtml;
+      wrapperEl.parentNode.replaceChild(tempContainer.firstChild, wrapperEl);
 
-      var html = '';
-      for (var i = 0; i < messagesList.length; i++) {
-        var m = messagesList[i];
-        var bubbleClass = m.sender === 'admin' ? 'admin' : 'client';
-        var senderLabel = m.sender === 'admin'
-          ? (m.senderName || 'Comercio (Porkys C.A)') + ': '
-          : (m.senderName || defaultClientName) + ': ';
-        html += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + m.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (m.time || '') + '</span></div>';
-      }
-      boxEl.innerHTML = html;
-      boxEl.scrollTop = boxEl.scrollHeight;
+      applySmartChatScroll('client-pre-chat-messages', messagesList.length, false);
     }
 
     function renderAdminPreChats() {
@@ -1997,19 +2152,14 @@
           ? '<span style="background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:999px;">Por responder</span>'
           : '<span style="background:#eccc68; color:#2f3542; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:999px;">Respondido</span>';
 
-        var msgsHtml = '';
-        for (var m = 0; m < msgs.length; m++) {
-          var item = msgs[m];
-          var cls = item.sender === 'admin' ? 'admin' : 'client';
-          var lbl = getChatMessageAuthorLabel(item, clientPlainName);
-          msgsHtml += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
-        }
+        var boxId = 'pre-chat-admin-box-' + cedKey;
+        var msgsHtml = buildChatBoxHtml(boxId, msgs, clientPlainName, 'Sin mensajes.');
 
         html += '<div style="background:#fff; border:1px solid #eccc68; border-radius:8px; padding:8px; margin-bottom:8px; font-size:0.82rem;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">' +
           '<strong>👤 ' + clientTitle + '</strong>' + badgeHtml +
           '</div>' +
-          '<div class="chat-messages-box" id="pre-chat-admin-box-' + cedKey + '">' + msgsHtml + '</div>' +
+          msgsHtml +
           '<div class="chat-input-row">' +
           '<input type="text" id="pre-chat-admin-input-' + cedKey + '" placeholder="Responder consulta a ' + clientPlainName + '..." onkeydown="if(event.key===\'Enter\') { event.preventDefault(); sendPreOrderMessage(\'' + cedKey + '\', \'admin\'); }">' +
           '<button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendPreOrderMessage(\'' + cedKey + '\', \'admin\')">Enviar</button>' +
@@ -2019,8 +2169,8 @@
       container.innerHTML = html;
 
       for (var b = 0; b < activeThreads.length; b++) {
-        var boxEl = document.getElementById('pre-chat-admin-box-' + activeThreads[b].clientCedula);
-        if (boxEl) boxEl.scrollTop = boxEl.scrollHeight;
+        var tItem = activeThreads[b];
+        applySmartChatScroll('pre-chat-admin-box-' + tItem.clientCedula, (tItem.messages || []).length, false);
       }
     }
 
@@ -2163,6 +2313,7 @@
         });
 
         notifyIncomingOrdersIfNeeded(allOrdersList);
+        notifyIncomingOrderChatsIfNeeded(allOrdersList);
         showOrderStatusUI();
         renderClientHistory();
         renderAdminOrders();
@@ -2177,6 +2328,7 @@
             }
           });
           notifyIncomingOrdersIfNeeded(allOrdersList);
+          notifyIncomingOrderChatsIfNeeded(allOrdersList);
           showOrderStatusUI();
           renderClientHistory();
           renderAdminOrders();
@@ -2237,6 +2389,7 @@
           });
           allOrdersList = fetchedOrders;
           notifyIncomingOrdersIfNeeded(allOrdersList);
+          notifyIncomingOrderChatsIfNeeded(allOrdersList);
           if (typeof showOrderStatusUI === 'function') showOrderStatusUI();
           if (typeof renderClientHistory === 'function') renderClientHistory();
           if (typeof renderAdminOrders === 'function') renderAdminOrders();
@@ -2266,6 +2419,7 @@
         });
         allOrdersList = fetchedOrders;
         notifyIncomingOrdersIfNeeded(allOrdersList);
+        notifyIncomingOrderChatsIfNeeded(allOrdersList);
         if (!isUserTypingInChat) {
           if (typeof showOrderStatusUI === 'function') showOrderStatusUI();
           if (typeof renderAdminOrders === 'function') renderAdminOrders();
@@ -2504,6 +2658,7 @@
       setTimeout(function() {
         hideLoadingModal(); var user = registeredClients[fullCedula];
         if (user && user.password === pass) {
+          getAudioContext();
           activeUser = user;
           hasRestoredSession = true;
           updatePostRegisterCard(null);
@@ -2770,13 +2925,16 @@
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
       };
       targetOrder.messages.push(newMsg);
+      prevOrderChatCounts[String(orderId)] = targetOrder.messages.length;
       inputElem.value = '';
 
+      var boxId = senderType === 'admin' ? 'admin-chat-box-' + orderId : 'client-chat-box-' + orderId;
       if (senderType === 'client') {
         showOrderStatusUI();
       } else {
         renderAdminOrders();
       }
+      applySmartChatScroll(boxId, targetOrder.messages.length, true);
 
       if (targetOrder.firestoreId && !targetOrder.firestoreId.startsWith('local_')) {
         try {
@@ -2830,18 +2988,10 @@
         multiHtml += '<div style="background:white; padding:8px; border-radius:6px; margin-bottom:6px; border:1px solid #ddd;"><p><strong>Pedido #' + (k+1) + ':</strong> ' + (itemsArray.join(', ') || 'Productos varios') + '</p><p><small>Ref: ' + (ord.ref || 'S/R') + ' | Monto: ' + formatBsCurrency(ord.amountBs || 0) + ' Bs.</small></p><span class="status-badge ' + ord.status + '" style="margin-top:4px; display:inline-block; font-size:0.75rem; font-weight:bold; padding: 4px 8px; border-radius: 4px; background: #fff3cd; color: #856404;">Estatus: ' + statusText + '</span>';
 
         var messagesList = ord.messages || [];
-        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con el Comercio:</div><div class="chat-messages-box" id="client-chat-box-' + ord.id + '">';
-        if (messagesList.length === 0) {
-          chatHtml += '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">No hay mensajes todavía.</p>';
-        } else {
-          for (var m = 0; m < messagesList.length; m++) {
-            var msgItem = messagesList[m];
-            var bubbleClass = msgItem.sender === 'admin' ? 'admin' : 'client';
-            var senderLabel = getChatMessageAuthorLabel(msgItem, orderClientName);
-            chatHtml += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + msgItem.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (msgItem.time || '') + '</span></div>';
-          }
-        }
-        chatHtml += '</div><div class="chat-input-row"><input type="text" id="client-chat-input-' + ord.id + '" placeholder="Escribe un mensaje..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + ord.id + ', \'client\')"><button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendOrderMessage(' + ord.id + ', \'client\')">Enviar</button></div></div>';
+        var cBoxId = 'client-chat-box-' + ord.id;
+        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con el Comercio:</div>' +
+          buildChatBoxHtml(cBoxId, messagesList, orderClientName, 'No hay mensajes todavía.') +
+          '<div class="chat-input-row"><input type="text" id="client-chat-input-' + ord.id + '" placeholder="Escribe un mensaje..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + ord.id + ', \'client\')"><button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendOrderMessage(' + ord.id + ', \'client\')">Enviar</button></div></div>';
         multiHtml += chatHtml;
 
         if (ord.status === 'on_the_way') {
@@ -2853,8 +3003,8 @@
       msg.innerHTML = multiHtml;
 
       for (var c = 0; c < userOrders.length; c++) {
-        var boxEl = document.getElementById('client-chat-box-' + userOrders[c].id);
-        if (boxEl) boxEl.scrollTop = boxEl.scrollHeight;
+        var uOrd = userOrders[c];
+        applySmartChatScroll('client-chat-box-' + uOrd.id, (uOrd.messages || []).length, false);
       }
     }
 
@@ -3290,18 +3440,10 @@
 
         var orderClientFullName = getClientDisplayName(order.client);
         var messagesList = order.messages || [];
-        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con ' + orderClientFullName + ':</div><div class="chat-messages-box" id="admin-chat-box-' + order.id + '">';
-        if (messagesList.length === 0) {
-          chatHtml += '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">No hay mensajes todavía.</p>';
-        } else {
-          for (var m = 0; m < messagesList.length; m++) {
-            var msgItem = messagesList[m];
-            var bubbleClass = msgItem.sender === 'admin' ? 'admin' : 'client';
-            var senderLabel = getChatMessageAuthorLabel(msgItem, orderClientFullName);
-            chatHtml += '<div class="chat-bubble ' + bubbleClass + '"><strong>' + senderLabel + '</strong>' + msgItem.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (msgItem.time || '') + '</span></div>';
-          }
-        }
-        chatHtml += '</div><div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Responder a ' + orderClientFullName + '..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
+        var aBoxId = 'admin-chat-box-' + order.id;
+        var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con ' + orderClientFullName + ':</div>' +
+          buildChatBoxHtml(aBoxId, messagesList, orderClientFullName, 'No hay mensajes todavía.') +
+          '<div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Responder a ' + orderClientFullName + '..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
 
         html += '<div class="order-card-admin" style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.83rem;"><h4>👤 ' + order.client.nombre + ' ' + order.client.apellido + ' (Cédula: <span style="color:var(--pink-accent);">' + order.client.cedula + '</span>)</h4>' +
           '<p><strong>🗓️ Fecha:</strong> ' + (order.dateStr || new Date(order.id).toLocaleDateString()) + '</p>' +
@@ -3315,8 +3457,9 @@
       container.innerHTML = html;
 
       for (var a = 0; a < allOrdersList.length; a++) {
-        var boxEl = document.getElementById('admin-chat-box-' + allOrdersList[a].id);
-        if (boxEl) boxEl.scrollTop = boxEl.scrollHeight;
+        var aOrd = allOrdersList[a];
+        if (!aOrd || !aOrd.client) continue;
+        applySmartChatScroll('admin-chat-box-' + aOrd.id, (aOrd.messages || []).length, false);
       }
     }
 
@@ -3409,6 +3552,7 @@
       }).then(function(snapshot) {
         allOrdersList = [];
         previousOrdersCount = 0;
+        prevOrderChatCounts = {};
         snapshot.forEach(function(docSnap) {
           var ord = docSnap.data();
           ord.firestoreId = docSnap.id;
@@ -3425,6 +3569,7 @@
         hideLoadingModal();
         allOrdersList = [];
         previousOrdersCount = 0;
+        prevOrderChatCounts = {};
         currentCart = [];
         updateStoreButtonUI();
         renderAdminOrders();
