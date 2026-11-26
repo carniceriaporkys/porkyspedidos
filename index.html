@@ -1055,13 +1055,13 @@
 
       <div class="card-box" style="padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
         <button type="button" class="collapsible-btn" onclick="toggleBox('box-clients'); renderAdminClientsList();" style="width:100%; text-align:left; background:none; border:none; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>👥 Clientes Registrados — Últimos Recién Registrados (<span id="admin-clients-count">0</span>)</span>
+          <span>👥 Clientes Registrados — Orden por Fecha (<span id="admin-clients-count">0</span>)</span>
           <span>▼</span>
         </button>
         <div id="box-clients" class="collapsible-content" style="margin-top: 8px;">
           <div style="display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
             <input type="text" id="admin-client-search" placeholder="Buscar por nombre, apellido, cédula o teléfono..." oninput="renderAdminClientsList()" style="flex:1; min-width:160px; padding:6px 10px; border:1.5px solid #eccc68; border-radius:8px; font-size:0.84rem; outline:none;">
-            <button type="button" id="btn-filter-recent-clients" class="btn btn-sm btn-back" style="margin-top:0;" onclick="toggleRecentClientsFilter()">🕒 Recién Registrados</button>
+            <button type="button" id="btn-filter-recent-clients" class="btn btn-sm btn-back" style="margin-top:0;" onclick="toggleRecentClientsFilter()">📅 Recientes</button>
             <button type="button" class="btn btn-sm btn-back" style="margin-top:0;" onclick="clearClientSearch()" title="Limpiar búsqueda">✖</button>
           </div>
           <div id="admin-clients-results-summary" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;"></div>
@@ -3327,14 +3327,12 @@
 
     function formatClientRegisteredLabel(clientObj) {
       var ts = getClientSortTimestamp(clientObj);
-      if (!ts) return 'Fecha/hora sin registrar (registro previo)';
+      if (!ts) return 'Fecha sin registrar';
       var dt = new Date(ts);
       var day = pad2(dt.getDate());
       var month = pad2(dt.getMonth() + 1);
       var year = dt.getFullYear();
-      var hours = pad2(dt.getHours());
-      var minutes = pad2(dt.getMinutes());
-      return day + '/' + month + '/' + year + ' • ' + hours + ':' + minutes;
+      return day + '/' + month + '/' + year;
     }
 
     function isRecentClient(clientObj) {
@@ -3413,7 +3411,7 @@
           ? '<span class="recent-rank-badge">⭐ Recién Registrado</span>'
           : '<span class="recent-rank-badge">#' + (j + 1) + '</span>';
         var regDateStr = formatClientRegisteredLabel(cl);
-        var regDateHtml = '<span class="client-reg-date">🕒 ' + regDateStr + '</span>';
+        var regDateHtml = '<span class="client-reg-date">📅 ' + regDateStr + '</span>';
 
         html += '<div style="background:#fff; border:1.5px solid ' + (j === 0 && hasTimestamp ? '#ff6b81' : '#eee') + '; padding:8px; border-radius:8px; margin-bottom:6px; font-size:0.82rem;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">' +
