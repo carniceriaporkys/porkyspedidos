@@ -409,29 +409,29 @@
     .alert-box.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-box.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-    /* Estilos del Chat */
+    /* Estilos del Chat con Scroll Fijo y Sin Saltos */
     .chat-container { position: relative; background: #f8f9fa; border: 1px solid #eccc68; border-radius: 8px; padding: 8px; margin-top: 8px; }
-    .chat-messages-box { position: relative; max-height: 215px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 6px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .chat-messages-box { max-height: 220px; overflow-y: auto; overflow-anchor: none; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 6px; margin-bottom: 6px; }
+    .chat-messages-list { display: flex; flex-direction: column; gap: 4px; }
     .chat-bubble { padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; max-width: 85%; line-height: 1.25; word-break: break-word; }
     .chat-bubble.admin { background: #ffeaa7; color: #2f3542; align-self: flex-start; border-bottom-left-radius: 2px; }
     .chat-bubble.client { background: var(--pink-accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     .chat-input-row { display: flex; gap: 4px; }
     .chat-input-row input { flex: 1; padding: 6px 8px; font-size: 0.82rem; border: 1px solid #ccc; border-radius: 6px; outline: none; background: #fff; }
     .chat-new-msg-btn {
-      position: sticky;
-      bottom: 4px;
-      align-self: center;
+      position: absolute;
+      right: 16px;
+      bottom: 48px;
       background: var(--pink-accent);
       color: #ffffff;
       border: 1.5px solid #ffffff;
       border-radius: 999px;
-      padding: 3px 10px;
+      padding: 4px 11px;
       font-size: 0.72rem;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 3px 8px rgba(47, 53, 66, 0.25);
-      z-index: 5;
-      margin-top: 4px;
+      box-shadow: 0 3px 10px rgba(47, 53, 66, 0.28);
+      z-index: 6;
     }
 
     .pre-order-chat-card {
@@ -826,8 +826,11 @@
           </p>
           <div class="chat-container" style="margin-top:0;">
             <div class="chat-messages-box" id="client-pre-chat-messages" onscroll="handleChatScroll('client-pre-chat-messages')">
-              <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o inquietud para el comercio.</p>
+              <div class="chat-messages-list" id="client-pre-chat-messages-list">
+                <p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">Escribe tu consulta o inquietud para el comercio.</p>
+              </div>
             </div>
+            <button type="button" id="chat-unread-btn-client-pre-chat-messages" class="chat-new-msg-btn hidden" onclick="scrollChatToBottom('client-pre-chat-messages')">⬇️ Nuevo mensaje abajo</button>
             <div class="chat-input-row">
               <input type="text" id="pre-chat-client-input" placeholder="Ej: ¿Dudas, inquietudes? Escríbele al comercio..." onkeydown="if(event.key==='Enter') { event.preventDefault(); sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client'); }">
               <button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendPreOrderMessage(activeUser ? activeUser.cedula : '', 'client')">Consultar</button>
@@ -1404,8 +1407,9 @@
     var isInitialPreChatLoad = true;
     var isInitialOrderChatLoad = true;
 
-    var chatLastRenderedCounts = {};
+    var chatLastSignatures = {};
     var chatHasUnreadBelow = {};
+    var chatManualScrollHoldUntil = {};
 
     var storeBanks = [
       'BANCO DE VENEZUELA (0102)', 'BANESCO (0134)', 'BBVA PROVINCIAL (0108)',
@@ -1513,6 +1517,12 @@
       return (msgItem.senderName || fallbackClientName || 'Cliente') + ': ';
     }
 
+    function getChatSignature(messagesList) {
+      if (!Array.isArray(messagesList) || messagesList.length === 0) return '0';
+      var last = messagesList[messagesList.length - 1] || {};
+      return messagesList.length + '|' + (last.sender || '') + '|' + (last.time || '') + '|' + (last.text || '');
+    }
+
     function isChatNearBottom(boxEl) {
       if (!boxEl) return true;
       return (boxEl.scrollHeight - boxEl.scrollTop - boxEl.clientHeight) <= 50;
@@ -1528,6 +1538,7 @@
     }
 
     function handleChatScroll(boxId) {
+      chatManualScrollHoldUntil[boxId] = Date.now() + 900;
       var boxEl = document.getElementById(boxId);
       if (!boxEl) return;
       if (isChatNearBottom(boxEl)) {
@@ -1537,26 +1548,68 @@
       }
     }
 
-    function applySmartChatScroll(boxId, currentMsgCount, forceScroll) {
+    function buildChatMessagesItemsHtml(messagesList, defaultClientName, emptyText) {
+      if (!messagesList || messagesList.length === 0) {
+        return '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">' + emptyText + '</p>';
+      }
+      var itemsHtml = '';
+      for (var m = 0; m < messagesList.length; m++) {
+        var item = messagesList[m];
+        var cls = item.sender === 'admin' ? 'admin' : 'client';
+        var lbl = getChatMessageAuthorLabel(item, defaultClientName);
+        itemsHtml += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
+      }
+      return itemsHtml;
+    }
+
+    function buildChatWidgetHtml(boxId, messagesList, defaultClientName, emptyText) {
+      var hiddenClass = chatHasUnreadBelow[boxId] ? '' : ' hidden';
+      return '<div class="chat-messages-box" id="' + boxId + '" onscroll="handleChatScroll(\'' + boxId + '\')">' +
+        '<div class="chat-messages-list" id="' + boxId + '-list">' +
+        buildChatMessagesItemsHtml(messagesList, defaultClientName, emptyText) +
+        '</div></div>' +
+        '<button type="button" id="chat-unread-btn-' + boxId + '" class="chat-new-msg-btn' + hiddenClass + '" onclick="scrollChatToBottom(\'' + boxId + '\')">⬇️ Nuevo mensaje abajo</button>';
+    }
+
+    function syncChatBoxDom(boxId, messagesList, defaultClientName, emptyText, forceScroll) {
       var boxEl = document.getElementById(boxId);
-      if (!boxEl) return;
+      var listEl = document.getElementById(boxId + '-list');
+      if (!boxEl || !listEl) return;
 
-      var prevRenderedCount = chatLastRenderedCounts[boxId] || 0;
-      var nearBottom = isChatNearBottom(boxEl);
+      var sig = getChatSignature(messagesList);
+      var prevSig = chatLastSignatures[boxId];
+      var isFirstRender = (prevSig === undefined);
+      var hasNewMessages = !isFirstRender && (sig !== prevSig);
 
-      if (forceScroll || prevRenderedCount === 0) {
+      var holdUntil = chatManualScrollHoldUntil[boxId] || 0;
+      if (!forceScroll && !hasNewMessages && Date.now() < holdUntil) {
+        return;
+      }
+
+      if (!forceScroll && !isFirstRender && !hasNewMessages) {
+        return;
+      }
+
+      var savedTop = boxEl.scrollTop;
+      var wasNearBottom = isChatNearBottom(boxEl);
+
+      listEl.innerHTML = buildChatMessagesItemsHtml(messagesList, defaultClientName, emptyText);
+      chatLastSignatures[boxId] = sig;
+
+      if (forceScroll || isFirstRender) {
         boxEl.scrollTop = boxEl.scrollHeight;
         chatHasUnreadBelow[boxId] = false;
-      } else if (currentMsgCount > prevRenderedCount) {
-        if (nearBottom) {
+      } else if (hasNewMessages) {
+        if (wasNearBottom) {
           boxEl.scrollTop = boxEl.scrollHeight;
           chatHasUnreadBelow[boxId] = false;
         } else {
+          boxEl.scrollTop = savedTop;
           chatHasUnreadBelow[boxId] = true;
         }
+      } else {
+        boxEl.scrollTop = savedTop;
       }
-
-      chatLastRenderedCounts[boxId] = currentMsgCount;
 
       var btn = document.getElementById('chat-unread-btn-' + boxId);
       if (btn) {
@@ -1566,26 +1619,6 @@
           btn.classList.add('hidden');
         }
       }
-    }
-
-    function buildChatBoxHtml(boxId, messagesList, defaultClientName, emptyText) {
-      var hiddenClass = chatHasUnreadBelow[boxId] ? '' : ' hidden';
-      var html = '<div class="chat-messages-box" id="' + boxId + '" onscroll="handleChatScroll(\'' + boxId + '\')">';
-
-      if (!messagesList || messagesList.length === 0) {
-        html += '<p style="font-size:0.75rem; color:#aaa; text-align:center; padding:4px;">' + emptyText + '</p>';
-      } else {
-        for (var m = 0; m < messagesList.length; m++) {
-          var item = messagesList[m];
-          var cls = item.sender === 'admin' ? 'admin' : 'client';
-          var lbl = getChatMessageAuthorLabel(item, defaultClientName);
-          html += '<div class="chat-bubble ' + cls + '"><strong>' + lbl + '</strong>' + item.text + ' <span style="font-size:0.65rem; opacity:0.7; display:block; text-align:right;">' + (item.time || '') + '</span></div>';
-        }
-      }
-
-      html += '<button type="button" id="chat-unread-btn-' + boxId + '" class="chat-new-msg-btn' + hiddenClass + '" onclick="scrollChatToBottom(\'' + boxId + '\')">⬇️ Nuevo mensaje abajo</button>';
-      html += '</div>';
-      return html;
     }
 
     if ('serviceWorker' in navigator) {
@@ -2060,11 +2093,10 @@
       preOrderChatsMap[cleanCedula].messages = currentMessages;
 
       if (senderType === 'client') {
-        renderClientPreChat();
-        applySmartChatScroll('client-pre-chat-messages', currentMessages.length, true);
+        syncChatBoxDom('client-pre-chat-messages', currentMessages, getClientDisplayName(activeUser), 'Escribe tu duda o inquietud antes de armar tu pedido.', true);
       } else {
         renderAdminPreChats();
-        applySmartChatScroll('pre-chat-admin-box-' + cleanCedula, currentMessages.length, true);
+        syncChatBoxDom('pre-chat-admin-box-' + cleanCedula, currentMessages, getClientDisplayName(cleanCedula), 'Sin mensajes.', true);
       }
 
       if (window.db && window.firebaseCollections) {
@@ -2081,17 +2113,12 @@
       }
     }
 
-    function renderClientPreChat() {
-      var wrapperEl = document.getElementById('client-pre-chat-messages');
-      if (!wrapperEl || !wrapperEl.parentNode) return;
-
-      var activeElementId = document.activeElement ? document.activeElement.id : '';
-      if (activeElementId === 'pre-chat-client-input') return;
+    function renderClientPreChat(forceScroll) {
+      var listEl = document.getElementById('client-pre-chat-messages-list');
+      if (!listEl) return;
 
       if (!activeUser || !activeUser.cedula) {
-        var tempDiv = document.createElement('div');
-        tempDiv.innerHTML = buildChatBoxHtml('client-pre-chat-messages', [], 'Cliente', 'Inicia sesión para consultar con el comercio.');
-        wrapperEl.parentNode.replaceChild(tempDiv.firstChild, wrapperEl);
+        syncChatBoxDom('client-pre-chat-messages', [], 'Cliente', 'Inicia sesión para consultar con el comercio.', !!forceScroll);
         return;
       }
 
@@ -2100,12 +2127,7 @@
       var messagesList = (chatDoc && Array.isArray(chatDoc.messages)) ? chatDoc.messages : [];
       var defaultClientName = getClientDisplayName(activeUser);
 
-      var newBoxHtml = buildChatBoxHtml('client-pre-chat-messages', messagesList, defaultClientName, 'Escribe tu duda o inquietud antes de armar tu pedido.');
-      var tempContainer = document.createElement('div');
-      tempContainer.innerHTML = newBoxHtml;
-      wrapperEl.parentNode.replaceChild(tempContainer.firstChild, wrapperEl);
-
-      applySmartChatScroll('client-pre-chat-messages', messagesList.length, false);
+      syncChatBoxDom('client-pre-chat-messages', messagesList, defaultClientName, 'Escribe tu duda o inquietud antes de armar tu pedido.', !!forceScroll);
     }
 
     function renderAdminPreChats() {
@@ -2114,7 +2136,7 @@
       if (!container) return;
 
       var activeElementId = document.activeElement ? document.activeElement.id : '';
-      if (activeElementId && activeElementId.startsWith('pre-chat-admin-input-')) return;
+      var isTypingInPreChat = !!(activeElementId && activeElementId.startsWith('pre-chat-admin-input-'));
 
       var keys = Object.keys(preOrderChatsMap);
       var activeThreads = [];
@@ -2136,6 +2158,22 @@
         return;
       }
 
+      if (isTypingInPreChat) {
+        for (var u = 0; u < activeThreads.length; u++) {
+          var tUpd = activeThreads[u];
+          var cInfo = registeredClients[tUpd.clientCedula];
+          var cName = cInfo ? ((cInfo.nombre || '') + ' ' + (cInfo.apellido || '')).trim() || tUpd.clientCedula : (tUpd.clientName || tUpd.clientCedula);
+          syncChatBoxDom('pre-chat-admin-box-' + tUpd.clientCedula, tUpd.messages || [], cName, 'Sin mensajes.', false);
+        }
+        return;
+      }
+
+      var savedScrolls = {};
+      for (var s = 0; s < activeThreads.length; s++) {
+        var sBox = document.getElementById('pre-chat-admin-box-' + activeThreads[s].clientCedula);
+        if (sBox) savedScrolls[activeThreads[s].clientCedula] = sBox.scrollTop;
+      }
+
       var html = '';
       for (var t = 0; t < activeThreads.length; t++) {
         var thread = activeThreads[t];
@@ -2153,7 +2191,7 @@
           : '<span style="background:#eccc68; color:#2f3542; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:999px;">Respondido</span>';
 
         var boxId = 'pre-chat-admin-box-' + cedKey;
-        var msgsHtml = buildChatBoxHtml(boxId, msgs, clientPlainName, 'Sin mensajes.');
+        var msgsHtml = buildChatWidgetHtml(boxId, msgs, clientPlainName, 'Sin mensajes.');
 
         html += '<div style="background:#fff; border:1px solid #eccc68; border-radius:8px; padding:8px; margin-bottom:8px; font-size:0.82rem;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">' +
@@ -2170,7 +2208,22 @@
 
       for (var b = 0; b < activeThreads.length; b++) {
         var tItem = activeThreads[b];
-        applySmartChatScroll('pre-chat-admin-box-' + tItem.clientCedula, (tItem.messages || []).length, false);
+        var bId = 'pre-chat-admin-box-' + tItem.clientCedula;
+        var bEl = document.getElementById(bId);
+        var sigNow = getChatSignature(tItem.messages || []);
+        var prevS = chatLastSignatures[bId];
+        var hadNew = (prevS !== undefined && prevS !== sigNow);
+        chatLastSignatures[bId] = sigNow;
+
+        if (bEl) {
+          if (prevS === undefined) {
+            bEl.scrollTop = bEl.scrollHeight;
+          } else if (hadNew && isChatNearBottom(bEl)) {
+            bEl.scrollTop = bEl.scrollHeight;
+          } else if (typeof savedScrolls[tItem.clientCedula] === 'number') {
+            bEl.scrollTop = savedScrolls[tItem.clientCedula];
+          }
+        }
       }
     }
 
@@ -2666,7 +2719,7 @@
           localStorage.removeItem('porkys_admin_session');
           document.getElementById('client-user-name').textContent = user.nombre + ' ' + user.apellido;
           currentCategoryFilter = ''; searchQuery = '';
-          renderCatalog(); renderClientPreChat(); renderClientHistory(); showScreen('screen-catalog');
+          renderCatalog(); renderClientPreChat(true); renderClientHistory(); showScreen('screen-catalog');
           updateClientBankSelect(); updateStoreReceiverBanksDisplay(); updateDailyOffersUI(); updateCasheaUI();
           showWelcomeModal(user.nombre + ' ' + user.apellido, false);
         } else { showAlert('Cédula o contraseña incorrectos.', 'error'); }
@@ -2929,12 +2982,13 @@
       inputElem.value = '';
 
       var boxId = senderType === 'admin' ? 'admin-chat-box-' + orderId : 'client-chat-box-' + orderId;
+      var cName = getClientDisplayName(targetOrder.client || activeUser);
       if (senderType === 'client') {
         showOrderStatusUI();
       } else {
         renderAdminOrders();
       }
-      applySmartChatScroll(boxId, targetOrder.messages.length, true);
+      syncChatBoxDom(boxId, targetOrder.messages, cName, 'No hay mensajes todavía.', true);
 
       if (targetOrder.firestoreId && !targetOrder.firestoreId.startsWith('local_')) {
         try {
@@ -2947,7 +3001,6 @@
     function showOrderStatusUI() {
       var activeElementId = document.activeElement ? document.activeElement.id : '';
       var isClientTyping = activeElementId && activeElementId.startsWith('client-chat-input-');
-      if (isClientTyping) return;
 
       var box = document.getElementById('order-status-box'), badge = document.getElementById('order-status-badge'), msg = document.getElementById('order-status-msg'), receivedBox = document.getElementById('client-received-box');
       if (!box || !badge || !msg) return;
@@ -2973,6 +3026,20 @@
       box.classList.remove('hidden');
       if (receivedBox) receivedBox.innerHTML = '';
 
+      if (isClientTyping) {
+        for (var u = 0; u < userOrders.length; u++) {
+          var uOrdUpd = userOrders[u];
+          syncChatBoxDom('client-chat-box-' + uOrdUpd.id, uOrdUpd.messages || [], getClientDisplayName(uOrdUpd.client || activeUser), 'No hay mensajes todavía.', false);
+        }
+        return;
+      }
+
+      var savedScrolls = {};
+      for (var s = 0; s < userOrders.length; s++) {
+        var sEl = document.getElementById('client-chat-box-' + userOrders[s].id);
+        if (sEl) savedScrolls[userOrders[s].id] = sEl.scrollTop;
+      }
+
       var multiHtml = '<h4 style="margin-bottom:6px; color:var(--pink-accent);">Tus Pedidos Activos (' + userOrders.length + ')</h4>';
       for (var k = 0; k < userOrders.length; k++) {
         var ord = userOrders[k], itemsArray = [], itemsList = ord.items || [];
@@ -2990,7 +3057,7 @@
         var messagesList = ord.messages || [];
         var cBoxId = 'client-chat-box-' + ord.id;
         var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con el Comercio:</div>' +
-          buildChatBoxHtml(cBoxId, messagesList, orderClientName, 'No hay mensajes todavía.') +
+          buildChatWidgetHtml(cBoxId, messagesList, orderClientName, 'No hay mensajes todavía.') +
           '<div class="chat-input-row"><input type="text" id="client-chat-input-' + ord.id + '" placeholder="Escribe un mensaje..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + ord.id + ', \'client\')"><button type="button" class="btn btn-sm btn-primary" style="margin-top:0;" onclick="sendOrderMessage(' + ord.id + ', \'client\')">Enviar</button></div></div>';
         multiHtml += chatHtml;
 
@@ -3004,7 +3071,22 @@
 
       for (var c = 0; c < userOrders.length; c++) {
         var uOrd = userOrders[c];
-        applySmartChatScroll('client-chat-box-' + uOrd.id, (uOrd.messages || []).length, false);
+        var boxIdItem = 'client-chat-box-' + uOrd.id;
+        var boxDom = document.getElementById(boxIdItem);
+        var sigCurrent = getChatSignature(uOrd.messages || []);
+        var sigPrev = chatLastSignatures[boxIdItem];
+        var hadNewMsg = (sigPrev !== undefined && sigPrev !== sigCurrent);
+        chatLastSignatures[boxIdItem] = sigCurrent;
+
+        if (boxDom) {
+          if (sigPrev === undefined) {
+            boxDom.scrollTop = boxDom.scrollHeight;
+          } else if (hadNewMsg && isChatNearBottom(boxDom)) {
+            boxDom.scrollTop = boxDom.scrollHeight;
+          } else if (typeof savedScrolls[uOrd.id] === 'number') {
+            boxDom.scrollTop = savedScrolls[uOrd.id];
+          }
+        }
       }
     }
 
@@ -3419,6 +3501,27 @@
       var container = document.getElementById('admin-orders-list');
       if (!container) return;
       if (allOrdersList.length === 0) { container.innerHTML = '<p class="empty-orders">No hay pedidos pendientes en este momento.</p>'; return; }
+
+      var activeElementId = document.activeElement ? document.activeElement.id : '';
+      var isTypingInOrderChat = !!(activeElementId && activeElementId.startsWith('admin-chat-input-'));
+
+      if (isTypingInOrderChat) {
+        for (var u = 0; u < allOrdersList.length; u++) {
+          var uOrd = allOrdersList[u];
+          if (!uOrd || !uOrd.client) continue;
+          syncChatBoxDom('admin-chat-box-' + uOrd.id, uOrd.messages || [], getClientDisplayName(uOrd.client), 'No hay mensajes todavía.', false);
+        }
+        return;
+      }
+
+      var savedScrolls = {};
+      for (var s = 0; s < allOrdersList.length; s++) {
+        var sOrd = allOrdersList[s];
+        if (!sOrd || !sOrd.client) continue;
+        var sBox = document.getElementById('admin-chat-box-' + sOrd.id);
+        if (sBox) savedScrolls[sOrd.id] = sBox.scrollTop;
+      }
+
       var html = '';
       for (var k = allOrdersList.length - 1; k >= 0; k--) {
         var order = allOrdersList[k];
@@ -3442,7 +3545,7 @@
         var messagesList = order.messages || [];
         var aBoxId = 'admin-chat-box-' + order.id;
         var chatHtml = '<div class="chat-container"><div style="font-size:0.78rem; font-weight:bold; color:var(--pink-accent); margin-bottom:4px;">💬 Chat con ' + orderClientFullName + ':</div>' +
-          buildChatBoxHtml(aBoxId, messagesList, orderClientFullName, 'No hay mensajes todavía.') +
+          buildChatWidgetHtml(aBoxId, messagesList, orderClientFullName, 'No hay mensajes todavía.') +
           '<div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Responder a ' + orderClientFullName + '..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
 
         html += '<div class="order-card-admin" style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.83rem;"><h4>👤 ' + order.client.nombre + ' ' + order.client.apellido + ' (Cédula: <span style="color:var(--pink-accent);">' + order.client.cedula + '</span>)</h4>' +
@@ -3459,7 +3562,22 @@
       for (var a = 0; a < allOrdersList.length; a++) {
         var aOrd = allOrdersList[a];
         if (!aOrd || !aOrd.client) continue;
-        applySmartChatScroll('admin-chat-box-' + aOrd.id, (aOrd.messages || []).length, false);
+        var boxIdItem = 'admin-chat-box-' + aOrd.id;
+        var boxDom = document.getElementById(boxIdItem);
+        var sigCurrent = getChatSignature(aOrd.messages || []);
+        var sigPrev = chatLastSignatures[boxIdItem];
+        var hadNewMsg = (sigPrev !== undefined && sigPrev !== sigCurrent);
+        chatLastSignatures[boxIdItem] = sigCurrent;
+
+        if (boxDom) {
+          if (sigPrev === undefined) {
+            boxDom.scrollTop = boxDom.scrollHeight;
+          } else if (hadNewMsg && isChatNearBottom(boxDom)) {
+            boxDom.scrollTop = boxDom.scrollHeight;
+          } else if (typeof savedScrolls[aOrd.id] === 'number') {
+            boxDom.scrollTop = savedScrolls[aOrd.id];
+          }
+        }
       }
     }
 
