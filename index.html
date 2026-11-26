@@ -421,6 +421,16 @@
       letter-spacing: 0.3px;
     }
 
+    .recent-rank-badge {
+      background: #fff0f3;
+      color: var(--pink-accent);
+      border: 1px solid #ffd6de;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
     .client-reg-date {
       font-size: 0.72rem;
       color: var(--text-muted);
@@ -1041,16 +1051,16 @@
 
       <div class="card-box" style="padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
         <button type="button" class="collapsible-btn" onclick="toggleBox('box-clients'); renderAdminClientsList();" style="width:100%; text-align:left; background:none; border:none; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>👥 Clientes Registrados (<span id="admin-clients-count">0</span>)</span>
+          <span>👥 Clientes Registrados — Últimos Primero (<span id="admin-clients-count">0</span>)</span>
           <span>▼</span>
         </button>
-        <div id="box-clients" class="collapsible-content hidden" style="margin-top: 8px;">
+        <div id="box-clients" class="collapsible-content" style="margin-top: 8px;">
           <div style="display:flex; gap:6px; margin-bottom:8px;">
             <input type="text" id="admin-client-search" placeholder="Buscar por nombre, apellido, cédula o teléfono..." oninput="renderAdminClientsList()" style="flex:1; padding:6px 10px; border:1.5px solid #eccc68; border-radius:8px; font-size:0.84rem; outline:none;">
             <button type="button" class="btn btn-sm btn-back" style="margin-top:0;" onclick="clearClientSearch()" title="Limpiar búsqueda">✖</button>
           </div>
           <div id="admin-clients-results-summary" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;"></div>
-          <div id="admin-clients-list" style="max-height: 260px; overflow-y: auto;"></div>
+          <div id="admin-clients-list" style="max-height: 280px; overflow-y: auto;"></div>
         </div>
       </div>
 
@@ -2467,7 +2477,11 @@
         registeredClients = {};
         snapshot.forEach(function(docSnap) {
           var client = docSnap.data();
-          registeredClients[client.cedula] = client;
+          if (!client) return;
+          var cedKey = (client.cedula || docSnap.id || '').trim().toUpperCase();
+          if (!cedKey) return;
+          client.cedula = cedKey;
+          registeredClients[cedKey] = client;
         });
         var countSpan = document.getElementById('admin-clients-count');
         if (countSpan) countSpan.textContent = Object.keys(registeredClients).length;
@@ -3274,19 +3288,19 @@
 
     function getClientSortTimestamp(clientObj) {
       if (!clientObj) return 0;
-      if (typeof clientObj.registeredAt === 'number' && !isNaN(clientObj.registeredAt)) {
+      if (typeof clientObj.registeredAt === 'number' && !isNaN(clientObj.registeredAt) && clientObj.registeredAt > 0) {
         return clientObj.registeredAt;
       }
       if (clientObj.registeredAt) {
         var parsed = Date.parse(clientObj.registeredAt);
-        if (!isNaN(parsed)) return parsed;
+        if (!isNaN(parsed) && parsed > 0) return parsed;
       }
       return 0;
     }
 
     function formatClientRegisteredLabel(clientObj) {
       var ts = getClientSortTimestamp(clientObj);
-      if (!ts) return '';
+      if (!ts) return 'Registro anterior';
       var dt = new Date(ts);
       return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
@@ -3341,8 +3355,8 @@
 
       if (summaryDiv) {
         summaryDiv.textContent = query
-          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes (más recientes primero).')
-          : ('Total registrados: ' + totalRegistered + ' (más recientes primero).');
+          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes (últimos registrados primero).')
+          : ('Total registrados: ' + totalRegistered + ' (últimos registrados primero).');
       }
 
       if (filteredClients.length === 0) {
@@ -3354,13 +3368,16 @@
       for (var j = 0; j < filteredClients.length; j++) {
         var cl = filteredClients[j];
         var isNewBadge = isRecentClient(cl) ? '<span class="new-client-badge">🆕 Nuevo</span>' : '';
+        var rankLabel = (j === 0 && getClientSortTimestamp(cl) > 0)
+          ? '<span class="recent-rank-badge">⭐ Último</span>'
+          : '<span class="recent-rank-badge">#' + (j + 1) + '</span>';
         var regDateStr = formatClientRegisteredLabel(cl);
-        var regDateHtml = regDateStr ? '<span class="client-reg-date">🗓️ ' + regDateStr + '</span>' : '';
+        var regDateHtml = '<span class="client-reg-date">🗓️ ' + regDateStr + '</span>';
 
-        html += '<div style="background:#fff; border:1px solid #eee; padding:8px; border-radius:6px; margin-bottom:6px; font-size:0.82rem;">' +
+        html += '<div style="background:#fff; border:1px solid ' + (j === 0 && getClientSortTimestamp(cl) > 0 ? '#ff6b81' : '#eee') + '; padding:8px; border-radius:6px; margin-bottom:6px; font-size:0.82rem;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">' +
           '<strong>👤 ' + (cl.nombre || '') + ' ' + (cl.apellido || '') + ' (' + (cl.cedula || '') + ')</strong>' +
-          '<div style="display:flex; align-items:center; gap:5px;">' + isNewBadge + regDateHtml + '</div>' +
+          '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">' + rankLabel + isNewBadge + regDateHtml + '</div>' +
           '</div>' +
           '<p><strong>📞 Tlf:</strong> ' + (cl.telefono || '') + '</p>' +
           '<p><strong>📍 Dir:</strong> ' + (cl.direccion || '') + '</p>' +
