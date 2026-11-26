@@ -432,9 +432,13 @@
     }
 
     .client-reg-date {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 600;
+      font-size: 0.73rem;
+      color: #2f3542;
+      background: #fff8e7;
+      border: 1px solid #ffeaa7;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
     }
 
     .archived-badge {
@@ -1051,12 +1055,13 @@
 
       <div class="card-box" style="padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
         <button type="button" class="collapsible-btn" onclick="toggleBox('box-clients'); renderAdminClientsList();" style="width:100%; text-align:left; background:none; border:none; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>👥 Clientes Registrados — Últimos Primero (<span id="admin-clients-count">0</span>)</span>
+          <span>👥 Clientes Registrados — Últimos Recién Registrados (<span id="admin-clients-count">0</span>)</span>
           <span>▼</span>
         </button>
         <div id="box-clients" class="collapsible-content" style="margin-top: 8px;">
-          <div style="display:flex; gap:6px; margin-bottom:8px;">
-            <input type="text" id="admin-client-search" placeholder="Buscar por nombre, apellido, cédula o teléfono..." oninput="renderAdminClientsList()" style="flex:1; padding:6px 10px; border:1.5px solid #eccc68; border-radius:8px; font-size:0.84rem; outline:none;">
+          <div style="display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+            <input type="text" id="admin-client-search" placeholder="Buscar por nombre, apellido, cédula o teléfono..." oninput="renderAdminClientsList()" style="flex:1; min-width:160px; padding:6px 10px; border:1.5px solid #eccc68; border-radius:8px; font-size:0.84rem; outline:none;">
+            <button type="button" id="btn-filter-recent-clients" class="btn btn-sm btn-back" style="margin-top:0;" onclick="toggleRecentClientsFilter()">🕒 Recién Registrados</button>
             <button type="button" class="btn btn-sm btn-back" style="margin-top:0;" onclick="clearClientSearch()" title="Limpiar búsqueda">✖</button>
           </div>
           <div id="admin-clients-results-summary" style="font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;"></div>
@@ -1441,6 +1446,8 @@
     var swRegistration = null;
     var hasRestoredSession = false;
     var showArchivedOrders = false;
+    var onlyRecentClientsFilter = false;
+    var legacyClientFallbackIndex = 0;
 
     var preOrderChatsMap = {};
     var prevPreChatCounts = {};
@@ -2481,6 +2488,10 @@
           var cedKey = (client.cedula || docSnap.id || '').trim().toUpperCase();
           if (!cedKey) return;
           client.cedula = cedKey;
+          if (!client.registeredAt) {
+            legacyClientFallbackIndex += 1;
+            client._fallbackRank = legacyClientFallbackIndex;
+          }
           registeredClients[cedKey] = client;
         });
         var countSpan = document.getElementById('admin-clients-count');
@@ -3277,12 +3288,24 @@
 
     var productToDeleteId = null, clientToDeleteCedula = null;
 
+    function toggleRecentClientsFilter() {
+      onlyRecentClientsFilter = !onlyRecentClientsFilter;
+      var btn = document.getElementById('btn-filter-recent-clients');
+      if (btn) {
+        btn.className = onlyRecentClientsFilter ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-back';
+      }
+      renderAdminClientsList();
+    }
+
     function clearClientSearch() {
       var searchInput = document.getElementById('admin-client-search');
       if (searchInput) {
         searchInput.value = '';
         searchInput.focus();
       }
+      onlyRecentClientsFilter = false;
+      var btn = document.getElementById('btn-filter-recent-clients');
+      if (btn) btn.className = 'btn btn-sm btn-back';
       renderAdminClientsList();
     }
 
@@ -3298,11 +3321,20 @@
       return 0;
     }
 
+    function pad2(n) {
+      return n < 10 ? '0' + n : String(n);
+    }
+
     function formatClientRegisteredLabel(clientObj) {
       var ts = getClientSortTimestamp(clientObj);
-      if (!ts) return 'Registro anterior';
+      if (!ts) return 'Fecha/hora sin registrar (registro previo)';
       var dt = new Date(ts);
-      return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      var day = pad2(dt.getDate());
+      var month = pad2(dt.getMonth() + 1);
+      var year = dt.getFullYear();
+      var hours = pad2(dt.getHours());
+      var minutes = pad2(dt.getMinutes());
+      return day + '/' + month + '/' + year + ' • ' + hours + ':' + minutes;
     }
 
     function isRecentClient(clientObj) {
@@ -3336,6 +3368,8 @@
       for (var i = 0; i < clientKeys.length; i++) {
         var c = registeredClients[clientKeys[i]];
         if (!c) continue;
+        if (onlyRecentClientsFilter && !isRecentClient(c)) continue;
+
         var fullName = ((c.nombre || '') + ' ' + (c.apellido || '')).toLowerCase();
         var ced = (c.cedula || '').toLowerCase();
         var tel = (c.telefono || '').toLowerCase();
@@ -3349,36 +3383,44 @@
       filteredClients.sort(function(a, b) {
         var tsA = getClientSortTimestamp(a);
         var tsB = getClientSortTimestamp(b);
-        if (tsB !== tsA) return tsB - tsA;
-        return String(b.cedula || '').localeCompare(String(a.cedula || ''));
+        if (tsA > 0 && tsB > 0) {
+          if (tsB !== tsA) return tsB - tsA;
+          return String(b.cedula || '').localeCompare(String(a.cedula || ''));
+        }
+        if (tsB > 0) return 1;
+        if (tsA > 0) return -1;
+        return (b._fallbackRank || 0) - (a._fallbackRank || 0);
       });
 
       if (summaryDiv) {
+        var filterNote = onlyRecentClientsFilter ? ' (últimas 48h)' : '';
         summaryDiv.textContent = query
-          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes (últimos registrados primero).')
-          : ('Total registrados: ' + totalRegistered + ' (últimos registrados primero).');
+          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes' + filterNote + ' — del más reciente al más antiguo.')
+          : ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes' + filterNote + ' — del más reciente al más antiguo.');
       }
 
       if (filteredClients.length === 0) {
-        container.innerHTML = '<p style="font-size:0.83rem; color:var(--text-muted); padding:6px 0;">No se encontraron clientes con "' + query + '".</p>';
+        container.innerHTML = '<p style="font-size:0.83rem; color:var(--text-muted); padding:6px 0;">No hay clientes que coincidan con el filtro actual.</p>';
         return;
       }
 
       var html = '';
       for (var j = 0; j < filteredClients.length; j++) {
         var cl = filteredClients[j];
+        var hasTimestamp = getClientSortTimestamp(cl) > 0;
         var isNewBadge = isRecentClient(cl) ? '<span class="new-client-badge">🆕 Nuevo</span>' : '';
-        var rankLabel = (j === 0 && getClientSortTimestamp(cl) > 0)
-          ? '<span class="recent-rank-badge">⭐ Último</span>'
+        var rankLabel = (j === 0 && hasTimestamp)
+          ? '<span class="recent-rank-badge">⭐ Recién Registrado</span>'
           : '<span class="recent-rank-badge">#' + (j + 1) + '</span>';
         var regDateStr = formatClientRegisteredLabel(cl);
-        var regDateHtml = '<span class="client-reg-date">🗓️ ' + regDateStr + '</span>';
+        var regDateHtml = '<span class="client-reg-date">🕒 ' + regDateStr + '</span>';
 
-        html += '<div style="background:#fff; border:1px solid ' + (j === 0 && getClientSortTimestamp(cl) > 0 ? '#ff6b81' : '#eee') + '; padding:8px; border-radius:6px; margin-bottom:6px; font-size:0.82rem;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">' +
+        html += '<div style="background:#fff; border:1.5px solid ' + (j === 0 && hasTimestamp ? '#ff6b81' : '#eee') + '; padding:8px; border-radius:8px; margin-bottom:6px; font-size:0.82rem;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">' +
           '<strong>👤 ' + (cl.nombre || '') + ' ' + (cl.apellido || '') + ' (' + (cl.cedula || '') + ')</strong>' +
-          '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">' + rankLabel + isNewBadge + regDateHtml + '</div>' +
+          '<div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">' + rankLabel + isNewBadge + '</div>' +
           '</div>' +
+          '<div style="margin-bottom:4px;">' + regDateHtml + '</div>' +
           '<p><strong>📞 Tlf:</strong> ' + (cl.telefono || '') + '</p>' +
           '<p><strong>📍 Dir:</strong> ' + (cl.direccion || '') + '</p>' +
           '<p><strong>🔑 Clave:</strong> <span style="color:var(--pink-accent); font-weight:bold;">' + (cl.password || '') + '</span></p>' +
