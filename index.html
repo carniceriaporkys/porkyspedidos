@@ -409,6 +409,33 @@
     .alert-box.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-box.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
+    /* Badges de Clientes y Archivados */
+    .new-client-badge {
+      background: #2ed573;
+      color: #ffffff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .client-reg-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .archived-badge {
+      background: #dfe4ea;
+      color: #2f3542;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
     /* Estilos del Chat con Scroll Fijo y Sin Saltos */
     .chat-container { position: relative; background: #f8f9fa; border: 1px solid #eccc68; border-radius: 8px; padding: 8px; margin-top: 8px; }
     .chat-messages-box { max-height: 220px; overflow-y: auto; overflow-anchor: none; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 6px; margin-bottom: 6px; }
@@ -1170,9 +1197,12 @@
       </div>
 
       <div class="card-box" style="background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h3 style="font-size: 1rem;">📋 Pedidos Recibidos</h3>
-          <button type="button" class="btn btn-sm btn-warning" onclick="closeDailyShift()">📊 Cierre de Jornada</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+          <h3 style="font-size: 1rem;">📋 Pedidos Recibidos (<span id="admin-active-orders-count">0</span>)</h3>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" id="btn-toggle-archived-orders" class="btn btn-sm btn-back" onclick="toggleShowArchivedOrders()">📂 Archivados (<span id="admin-archived-orders-count">0</span>)</button>
+            <button type="button" class="btn btn-sm btn-warning" onclick="closeDailyShift()">📊 Cierre de Jornada</button>
+          </div>
         </div>
         <div id="admin-orders-list"><p class="empty-orders" style="font-size:0.85rem; color:var(--text-muted);">No hay pedidos pendientes por procesar.</p></div>
       </div>
@@ -1400,6 +1430,7 @@
     var farewellModalTimer = null;
     var swRegistration = null;
     var hasRestoredSession = false;
+    var showArchivedOrders = false;
 
     var preOrderChatsMap = {};
     var prevPreChatCounts = {};
@@ -1722,7 +1753,6 @@
       return sharedAudioCtx;
     }
 
-    /* Campanazo corto y limpio para cada mensaje nuevo de chat */
     function playChatBellSound() {
       try {
         var audioCtx = getAudioContext();
@@ -1755,7 +1785,6 @@
       } catch (e) {}
     }
 
-    /* Sonido largo para cuando llega un pedido nuevo */
     function playNotificationSound(isTest) {
       try {
         var audioCtx = getAudioContext();
@@ -2088,9 +2117,10 @@
       prevPreChatCounts[cleanCedula] = currentMessages.length;
 
       if (!preOrderChatsMap[cleanCedula]) {
-        preOrderChatsMap[cleanCedula] = { clientCedula: cleanCedula, clientName: getClientDisplayName(cleanCedula), messages: [] };
+        preOrderChatsMap[cleanCedula] = { clientCedula: cleanCedula, clientName: getClientDisplayName(cleanCedula), messages: [], updatedAt: Date.now() };
       }
       preOrderChatsMap[cleanCedula].messages = currentMessages;
+      preOrderChatsMap[cleanCedula].updatedAt = Date.now();
 
       if (senderType === 'client') {
         syncChatBoxDom('client-pre-chat-messages', currentMessages, getClientDisplayName(activeUser), 'Escribe tu duda o inquietud antes de armar tu pedido.', true);
@@ -2110,6 +2140,32 @@
           messages: currentMessages,
           updatedAt: Date.now()
         }, { merge: true }).catch(function(){});
+      }
+    }
+
+    function deletePreOrderChat(clientCedula) {
+      if (!clientCedula) return;
+      var cleanCedula = clientCedula.trim().toUpperCase();
+      delete preOrderChatsMap[cleanCedula];
+      delete prevPreChatCounts[cleanCedula];
+      delete chatLastSignatures['pre-chat-admin-box-' + cleanCedula];
+      delete chatHasUnreadBelow['pre-chat-admin-box-' + cleanCedula];
+      renderAdminPreChats();
+
+      if (activeUser && activeUser.cedula && activeUser.cedula.trim().toUpperCase() === cleanCedula) {
+        renderClientPreChat(false);
+      }
+
+      if (window.db && window.firebaseCollections) {
+        var db = window.db;
+        var fc = window.firebaseCollections;
+        fc.deleteDoc(fc.doc(db, 'pre_order_chats', cleanCedula)).then(function() {
+          showAlert('Consulta previa eliminada.', 'success');
+        }).catch(function() {
+          showAlert('Consulta retirada de la vista.', 'success');
+        });
+      } else {
+        showAlert('Consulta previa eliminada.', 'success');
       }
     }
 
@@ -2195,8 +2251,11 @@
 
         html += '<div style="background:#fff; border:1px solid #eccc68; border-radius:8px; padding:8px; margin-bottom:8px; font-size:0.82rem;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">' +
-          '<strong>👤 ' + clientTitle + '</strong>' + badgeHtml +
-          '</div>' +
+          '<strong>👤 ' + clientTitle + '</strong>' +
+          '<div style="display:flex; align-items:center; gap:5px;">' +
+          badgeHtml +
+          '<button type="button" class="btn btn-sm btn-danger" style="margin-top:0; padding:2px 7px; font-size:0.72rem;" title="Borrar consulta" onclick="deletePreOrderChat(\'' + cedKey + '\')">🗑️ Borrar</button>' +
+          '</div></div>' +
           msgsHtml +
           '<div class="chat-input-row">' +
           '<input type="text" id="pre-chat-admin-input-' + cedKey + '" placeholder="Responder consulta a ' + clientPlainName + '..." onkeydown="if(event.key===\'Enter\') { event.preventDefault(); sendPreOrderMessage(\'' + cedKey + '\', \'admin\'); }">' +
@@ -2583,6 +2642,8 @@
       if (screenId === 'screen-admin-panel') {
         updatePushNotificationStatusUI();
         renderAdminPreChats();
+        renderAdminClientsList();
+        renderAdminOrders();
       }
     }
 
@@ -2679,11 +2740,25 @@
       if (registeredClients[fullCedula]) { showAlert('Esta cédula ya está registrada.', 'error'); return; }
 
       showLoadingModal('Registrando cliente...');
-      var clientData = { nombre: nombre, apellido: apellido, cedula: fullCedula, telefono: telefono, direccion: fullDireccion, preg1: preg1, resp1: resp1, preg2: preg2, resp2: resp2, password: pass1 };
+      var regTimestamp = Date.now();
+      var clientData = {
+        nombre: nombre,
+        apellido: apellido,
+        cedula: fullCedula,
+        telefono: telefono,
+        direccion: fullDireccion,
+        preg1: preg1,
+        resp1: resp1,
+        preg2: preg2,
+        resp2: resp2,
+        password: pass1,
+        registeredAt: regTimestamp
+      };
       var db = window.db, fc = window.firebaseCollections;
       fc.setDoc(fc.doc(db, 'clients', fullCedula), clientData).then(function() {
         hideLoadingModal();
         registeredClients[fullCedula] = clientData;
+        renderAdminClientsList();
         var loginNac = document.getElementById('login-nac');
         var loginCed = document.getElementById('login-cedula');
         if (loginNac) loginNac.value = nac;
@@ -2851,6 +2926,7 @@
         ref: ref,
         receiptBase64: currentReceiptBase64,
         status: 'pending',
+        archived: false,
         messages: []
       };
 
@@ -3196,6 +3272,32 @@
       renderAdminClientsList();
     }
 
+    function getClientSortTimestamp(clientObj) {
+      if (!clientObj) return 0;
+      if (typeof clientObj.registeredAt === 'number' && !isNaN(clientObj.registeredAt)) {
+        return clientObj.registeredAt;
+      }
+      if (clientObj.registeredAt) {
+        var parsed = Date.parse(clientObj.registeredAt);
+        if (!isNaN(parsed)) return parsed;
+      }
+      return 0;
+    }
+
+    function formatClientRegisteredLabel(clientObj) {
+      var ts = getClientSortTimestamp(clientObj);
+      if (!ts) return '';
+      var dt = new Date(ts);
+      return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function isRecentClient(clientObj) {
+      var ts = getClientSortTimestamp(clientObj);
+      if (!ts) return false;
+      var hours48 = 48 * 60 * 60 * 1000;
+      return (Date.now() - ts) <= hours48;
+    }
+
     function renderAdminClientsList() {
       var container = document.getElementById('admin-clients-list');
       var countSpan = document.getElementById('admin-clients-count');
@@ -3230,10 +3332,17 @@
         }
       }
 
+      filteredClients.sort(function(a, b) {
+        var tsA = getClientSortTimestamp(a);
+        var tsB = getClientSortTimestamp(b);
+        if (tsB !== tsA) return tsB - tsA;
+        return String(b.cedula || '').localeCompare(String(a.cedula || ''));
+      });
+
       if (summaryDiv) {
         summaryDiv.textContent = query
-          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes registrados.')
-          : ('Total registrados: ' + totalRegistered + (totalRegistered === 1 ? ' cliente.' : ' clientes.'));
+          ? ('Mostrando ' + filteredClients.length + ' de ' + totalRegistered + ' clientes (más recientes primero).')
+          : ('Total registrados: ' + totalRegistered + ' (más recientes primero).');
       }
 
       if (filteredClients.length === 0) {
@@ -3244,8 +3353,15 @@
       var html = '';
       for (var j = 0; j < filteredClients.length; j++) {
         var cl = filteredClients[j];
+        var isNewBadge = isRecentClient(cl) ? '<span class="new-client-badge">🆕 Nuevo</span>' : '';
+        var regDateStr = formatClientRegisteredLabel(cl);
+        var regDateHtml = regDateStr ? '<span class="client-reg-date">🗓️ ' + regDateStr + '</span>' : '';
+
         html += '<div style="background:#fff; border:1px solid #eee; padding:8px; border-radius:6px; margin-bottom:6px; font-size:0.82rem;">' +
-          '<p><strong>👤 ' + (cl.nombre || '') + ' ' + (cl.apellido || '') + '</strong> (' + (cl.cedula || '') + ')</p>' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">' +
+          '<strong>👤 ' + (cl.nombre || '') + ' ' + (cl.apellido || '') + ' (' + (cl.cedula || '') + ')</strong>' +
+          '<div style="display:flex; align-items:center; gap:5px;">' + isNewBadge + regDateHtml + '</div>' +
+          '</div>' +
           '<p><strong>📞 Tlf:</strong> ' + (cl.telefono || '') + '</p>' +
           '<p><strong>📍 Dir:</strong> ' + (cl.direccion || '') + '</p>' +
           '<p><strong>🔑 Clave:</strong> <span style="color:var(--pink-accent); font-weight:bold;">' + (cl.password || '') + '</span></p>' +
@@ -3497,17 +3613,69 @@
       }
     }
 
+    function setOrderArchivedState(orderId, shouldArchive) {
+      var targetOrder = null;
+      for (var i = 0; i < allOrdersList.length; i++) {
+        if (allOrdersList[i].id === orderId) {
+          targetOrder = allOrdersList[i];
+          targetOrder.archived = !!shouldArchive;
+          break;
+        }
+      }
+      if (!targetOrder) return;
+
+      renderAdminOrders();
+      showAlert(shouldArchive ? 'Pedido archivado para limpiar pantalla.' : 'Pedido restaurado a la bandeja activa.', 'success');
+
+      if (targetOrder.firestoreId && !targetOrder.firestoreId.startsWith('local_') && window.db && window.firebaseCollections) {
+        var db = window.db, fc = window.firebaseCollections;
+        fc.updateDoc(fc.doc(db, 'orders', targetOrder.firestoreId), { archived: !!shouldArchive }).catch(function(){});
+      }
+    }
+
+    function toggleShowArchivedOrders() {
+      showArchivedOrders = !showArchivedOrders;
+      renderAdminOrders();
+    }
+
     function renderAdminOrders() {
       var container = document.getElementById('admin-orders-list');
+      var activeCountSpan = document.getElementById('admin-active-orders-count');
+      var archivedCountSpan = document.getElementById('admin-archived-orders-count');
+      var toggleBtn = document.getElementById('btn-toggle-archived-orders');
       if (!container) return;
-      if (allOrdersList.length === 0) { container.innerHTML = '<p class="empty-orders">No hay pedidos pendientes en este momento.</p>'; return; }
+
+      var activeOrders = [];
+      var archivedOrders = [];
+      for (var i = 0; i < allOrdersList.length; i++) {
+        var ordItem = allOrdersList[i];
+        if (!ordItem || !ordItem.client) continue;
+        if (ordItem.archived) archivedOrders.push(ordItem);
+        else activeOrders.push(ordItem);
+      }
+
+      if (activeCountSpan) activeCountSpan.textContent = activeOrders.length;
+      if (archivedCountSpan) archivedCountSpan.textContent = archivedOrders.length;
+      if (toggleBtn) {
+        toggleBtn.className = showArchivedOrders ? 'btn btn-sm btn-info' : 'btn btn-sm btn-back';
+        toggleBtn.innerHTML = (showArchivedOrders ? '📋 Ver Activos (' + activeOrders.length + ')' : '📂 Archivados (<span id="admin-archived-orders-count">' + archivedOrders.length + '</span>)');
+      }
+
+      var listToRender = showArchivedOrders ? archivedOrders : activeOrders;
+
+      if (listToRender.length === 0) {
+        container.innerHTML = showArchivedOrders
+          ? '<p class="empty-orders" style="font-size:0.85rem; color:var(--text-muted);">No hay pedidos archivados por ahora.</p>'
+          : '<p class="empty-orders" style="font-size:0.85rem; color:var(--text-muted);">No hay pedidos activos en este momento. ¡Pantalla limpia!</p>';
+        return;
+      }
 
       var activeElementId = document.activeElement ? document.activeElement.id : '';
       var isTypingInOrderChat = !!(activeElementId && activeElementId.startsWith('admin-chat-input-'));
 
       if (isTypingInOrderChat) {
-        for (var u = 0; u < allOrdersList.length; u++) {
-          var uOrd = allOrdersList[u];
+        for (var u = 0; u < listToRender.length; u++) {
+          var uOrd = listToRender[u];
           if (!uOrd || !uOrd.client) continue;
           syncChatBoxDom('admin-chat-box-' + uOrd.id, uOrd.messages || [], getClientDisplayName(uOrd.client), 'No hay mensajes todavía.', false);
         }
@@ -3515,27 +3683,34 @@
       }
 
       var savedScrolls = {};
-      for (var s = 0; s < allOrdersList.length; s++) {
-        var sOrd = allOrdersList[s];
+      for (var s = 0; s < listToRender.length; s++) {
+        var sOrd = listToRender[s];
         if (!sOrd || !sOrd.client) continue;
         var sBox = document.getElementById('admin-chat-box-' + sOrd.id);
         if (sBox) savedScrolls[sOrd.id] = sBox.scrollTop;
       }
 
       var html = '';
-      for (var k = allOrdersList.length - 1; k >= 0; k--) {
-        var order = allOrdersList[k];
+      for (var k = listToRender.length - 1; k >= 0; k--) {
+        var order = listToRender[k];
         if (!order.client) continue;
         var itemsArray = [];
         var itemsList = order.items || [];
-        for (var i = 0; i < itemsList.length; i++) { itemsArray.push(itemsList[i].name + ' (' + formatQtyText(itemsList[i].qty, itemsList[i].unit) + ')'); }
+        for (var j = 0; j < itemsList.length; j++) { itemsArray.push(itemsList[j].name + ' (' + formatQtyText(itemsList[j].qty, itemsList[j].unit) + ')'); }
         var statusMap = { 'pending': 'Esperando Aceptación', 'processing': 'Atendiendo', 'packed': 'Empacado', 'on_the_way': 'En Camino', 'delivered': 'Entregado' };
         var controlsHtml = '<div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">';
         if (order.status === 'pending') { controlsHtml += '<button type="button" class="btn btn-sm btn-info" onclick="changeOrderStatus(' + order.id + ', \'processing\')">Aceptar y Atender</button>'; }
         else if (order.status === 'processing') { controlsHtml += '<button type="button" class="btn btn-sm btn-warning" onclick="changeOrderStatus(' + order.id + ', \'packed\')">Marcar Empacado</button>'; }
         else if (order.status === 'packed') { controlsHtml += '<button type="button" class="btn btn-sm btn-success" onclick="changeOrderStatus(' + order.id + ', \'on_the_way\')">Marcar En Camino</button>'; }
         else if (order.status === 'on_the_way') { controlsHtml += '<p style="color:var(--blue-info);font-weight:bold;margin-bottom:2px;">🛵 En camino...</p><button type="button" class="btn btn-sm btn-success" onclick="changeOrderStatus(' + order.id + ', \'delivered\')">✔ Marcar Entregado (Cerrar)</button>'; }
-        else if (order.status === 'delivered') { controlsHtml += '<p style="color:var(--green-success);font-weight:bold;">✔️ Entregado al cliente.</p>'; }
+        else if (order.status === 'delivered') {
+          controlsHtml += '<p style="color:var(--green-success);font-weight:bold;">✔️ Entregado al cliente.</p>';
+          if (!order.archived) {
+            controlsHtml += '<button type="button" class="btn btn-sm btn-back" onclick="setOrderArchivedState(' + order.id + ', true)">📥 Archivar Pedido y Chat</button>';
+          } else {
+            controlsHtml += '<button type="button" class="btn btn-sm btn-info" onclick="setOrderArchivedState(' + order.id + ', false)">📤 Mover a Activos</button>';
+          }
+        }
         controlsHtml += '</div>';
 
         var orderTotal = order.total || 0, orderSubtotal = order.subtotal || orderTotal, deliveryVal = order.deliveryCost || 1.00;
@@ -3548,7 +3723,9 @@
           buildChatWidgetHtml(aBoxId, messagesList, orderClientFullName, 'No hay mensajes todavía.') +
           '<div class="chat-input-row"><input type="text" id="admin-chat-input-' + order.id + '" placeholder="Responder a ' + orderClientFullName + '..." onkeydown="if(event.key===\'Enter\') sendOrderMessage(' + order.id + ', \'admin\')"><button type="button" class="btn btn-sm btn-secondary" style="margin-top:0;" onclick="sendOrderMessage(' + order.id + ', \'admin\')">Enviar</button></div></div>';
 
-        html += '<div class="order-card-admin" style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.83rem;"><h4>👤 ' + order.client.nombre + ' ' + order.client.apellido + ' (Cédula: <span style="color:var(--pink-accent);">' + order.client.cedula + '</span>)</h4>' +
+        var archivedTag = order.archived ? ' <span class="archived-badge">📥 Archivado</span>' : '';
+
+        html += '<div class="order-card-admin" style="background:#f8f9fa; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.83rem;"><h4>👤 ' + order.client.nombre + ' ' + order.client.apellido + ' (Cédula: <span style="color:var(--pink-accent);">' + order.client.cedula + '</span>)' + archivedTag + '</h4>' +
           '<p><strong>🗓️ Fecha:</strong> ' + (order.dateStr || new Date(order.id).toLocaleDateString()) + '</p>' +
           '<p><strong>📞 Tlf:</strong> ' + order.client.telefono + ' | <strong>📍 Dir:</strong> ' + order.client.direccion + '</p>' +
           '<p><strong>💳 Pago:</strong> ' + (order.bank || 'N/A') + ' | <strong>Monto:</strong> ' + formatBsCurrency(order.amountBs || 0) + ' Bs. (Ref: ' + (order.ref || 'S/R') + ')</p>' +
@@ -3559,8 +3736,8 @@
       }
       container.innerHTML = html;
 
-      for (var a = 0; a < allOrdersList.length; a++) {
-        var aOrd = allOrdersList[a];
+      for (var a = 0; a < listToRender.length; a++) {
+        var aOrd = listToRender[a];
         if (!aOrd || !aOrd.client) continue;
         var boxIdItem = 'admin-chat-box-' + aOrd.id;
         var boxDom = document.getElementById(boxIdItem);
